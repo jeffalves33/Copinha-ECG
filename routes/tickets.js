@@ -67,7 +67,7 @@ router.get('/summary', async (req, res) => {
                         title: 'Nome do ingresso',
                         quantity: 1,
                         currency_id: 'BRL',
-                        unit_price: 50,
+                        unit_price: 0.1,
                     }
                 ],
                 back_urls: {

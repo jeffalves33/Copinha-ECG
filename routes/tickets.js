@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
-const { MercadoPagoConfig, Preference } = require('mercadopago');
+const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 
 const Jimp = require('jimp');
 const QRCode = require('qrcode');
@@ -16,6 +16,38 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 // Configura Mercado Pago
 const mercadopago = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN });
+const payment = new Payment(mercadopago);
+
+router.post('/webhook/mercadopago', async (req, res) => {
+    try {
+        const paymentId = req.body.data && req.body.data.id;
+        const topic = req.body.type;
+        console.log('Webhook recebido:', JSON.stringify(req.body, null, 2));
+
+        if (topic !== 'payment') {
+            return res.sendStatus(200); // Ignora eventos não relacionados a pagamento
+        }
+
+        const paymentInfo = await payment.get(paymentId); // <- OK agora
+        const status = paymentInfo.status;
+        const preferenceId = paymentInfo.preference_id;
+
+        // Atualiza o banco de dados
+        const { error } = await supabase
+            .from('Tickets')
+            .update({ status })
+            .eq('payment_id', paymentId);
+
+        if (error) {
+            console.error('Erro ao atualizar pagamento no banco:', error);
+        }
+
+        res.sendStatus(200);
+    } catch (err) {
+        console.error('Erro no webhook do Mercado Pago:', err);
+        res.sendStatus(500);
+    }
+});
 
 // ========== ROTA: Resumo + Criação de Preference no Mercado Pago ==========
 router.get('/summary', async (req, res) => {
@@ -25,7 +57,7 @@ router.get('/summary', async (req, res) => {
             return res.status(400).send('Quantidade inválida.');
         }
 
-        const unitPrice = 10000; // R$100,00
+        const unitPrice = 10; // R$100,00
         const total = unitPrice * qty;
 
         const preference = await new Preference(mercadopago).create({
@@ -39,9 +71,9 @@ router.get('/summary', async (req, res) => {
                     }
                 ],
                 back_urls: {
-                    success: 'http://localhost:3000/pagamento/sucesso',
-                    failure: 'http://localhost:3000/pagamento/falha',
-                    pending: 'http://localhost:3000/pagamento/pendente',
+                    success: 'https://copinha-ecg.onrender.com/pagamento/sucesso',
+                    failure: 'https://copinha-ecg.onrender.com/pagamento/falha',
+                    pending: 'https://copinha-ecg.onrender.com/pagamento/pendente',
                 },
                 auto_return: 'approved', // Funciona APENAS se o back_urls.success estiver definido
             }
@@ -52,7 +84,7 @@ router.get('/summary', async (req, res) => {
             unitPrice,
             total,
             preferenceId: preference.id,
-            publicKey: process.env.MERCADOPAGO_PUBLIC_KEY
+            publicKey: process.env.MERCADO_PAGO_PUBLIC_KEY
         });
 
     } catch (err) {
@@ -70,7 +102,7 @@ router.get('/success', async (req, res) => {
             return res.send('Pagamento não aprovado.');
         }
 
-        const paymentInfo = await mercadopago.get(`/v1/payments/${collection_id}`);
+        const paymentInfo = await payment.get(collection_id);
         const payment = paymentInfo;
 
         const qty = payment.additional_info.items[0].quantity;

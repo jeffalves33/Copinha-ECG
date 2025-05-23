@@ -1,0 +1,130 @@
+<!-- views/index.ejs -->
+<!DOCTYPE html>
+<html>
+<%- include('partials/head', { title: 'IngressosNaJu' }) %>
+
+  <body>
+    <div class="container d-flex flex-column justify-content-center align-items-center" style="height: 100%;">
+      <img src="/images/logo_original.png" class="mb-5" alt="Imagem do Evento">
+      <div class="row justify-content-center w-100">
+        <button type="button" class="btn btn-success w-75 my-2 mx-4" data-bs-toggle="modal"
+          data-bs-target="#loginComprarModal">Comprar Ingressos</button>
+      </div>
+      <!--<div class="row justify-content-center w-100">
+        <button type="button" class="btn btn-info w-75 my-2 mx-4" data-bs-toggle="modal"
+          data-bs-target="#loginBaixarModal">Baixar ingressos</button>
+      </div>-->
+      <div class="row justify-content-center w-100">
+        <button type="button" class="btn btn-secondary w-75 my-2 mx-4" data-bs-toggle="modal"
+          onclick="window.open('https://wa.me/557399435704?text=Vim%20do%20site', '_blank')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp"
+            viewBox="0 0 16 16">
+            <path
+              d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />
+          </svg>
+          WhatsApp</button>
+      </div>
+      <div class="row justify-content-center w-100 align-items-center">
+        <p style="color: #9c9c9c; text-align: center;">criado por <i>IngressosNaJu</i></p>
+      </div>
+    </div>
+
+    <div class="modal fade" id="loginComprarModal" tabindex="-1" aria-labelledby="loginComprarModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="loginComprarModalLabel">Autenticação</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="modal-body-login">
+            <form id="loginForm">
+              <div class="mb-3">
+                <label for="cpf-input" class="col-form-label">CPF:</label>
+                <input type="text" class="form-control cpf-input-comprar" id="cpf-input" placeholder="Digite seu CPF"
+                  oninput="inputformatCPF(this)" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success" onclick="authenticateUser('comprar')">Entrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="loginBaixarModal" tabindex="-1" aria-labelledby="loginBaixarModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="loginBaixarModalLabel">Autenticação</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="loginForm">
+              <div class="mb-3">
+                <label for="cpf-input" class="col-form-label">CPF:</label>
+                <input type="text" class="form-control cpf-input-baixar" placeholder="Digite seu CPF"
+                  oninput="inputformatCPF(this)" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-secondary" onclick="authenticateUser('baixar')">Entrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        localStorage.clear();
+      });
+
+      function inputformatCPF(input) {
+        let value = input.value.replace(/\D/g, '');
+        if (value.length > 3) value = value.slice(0, 3) + '.' + value.slice(3);
+        if (value.length > 7) value = value.slice(0, 7) + '.' + value.slice(7);
+        if (value.length > 11) value = value.slice(0, 11) + '-' + value.slice(11, 13);
+        input.value = value;
+      }
+
+      function authenticateUser(input) {
+        const cpfInput = (input === "comprar") ? document.getElementsByClassName('cpf-input-comprar')[0].value : document.getElementsByClassName('cpf-input-baixar')[0].value;
+        const cpfError = document.getElementById('cpfError');
+
+        if (cpfInput.length === 14) {
+          fetch(`search-user-cpf/${cpfInput}`)
+            .then(response => response.json())
+            .then(data => {
+              localStorage.setItem('userCPF', cpfInput);
+              if (data.user !== null) {
+                if (input == "baixar") localStorage.setItem("ingresso", "baixar");
+                const modalBodyLogin = document.getElementById('modal-body-login');
+                const alertSuccess = document.createElement("div")
+                alertSuccess.className = "alert alert-success";
+                alertSuccess.innerHTML = `CPF encontrado, faça login!`;
+                modalBodyLogin.appendChild(alertSuccess)
+                setTimeout(() => {
+                  window.location.href = '/login';
+                }, 2000);
+              }
+              else {
+                const modalBodyLogin = document.getElementById('modal-body-login');
+                const alertSuccess = document.createElement("div")
+                alertSuccess.className = "alert alert-danger";
+                alertSuccess.innerHTML = `CPF não encontrado, faça cadastro!`;
+                modalBodyLogin.appendChild(alertSuccess)
+                setTimeout(() => {
+                  window.location.href = '/register';
+                }, 2000);
+              }
+            });
+        } else cpfError.style.display = 'block';
+      }
+
+    </script>
+  </body>
+
+</html>

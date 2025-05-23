@@ -1,0 +1,26 @@
+{
+  "name": "luevents",
+  "version": "1.0.0",
+  "description": "IngressosNaJu",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.46.1",
+    "body-parser": "^1.20.3",
+    "canvas": "^2.11.2",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1",
+    "jimp": "^0.2.27",
+    "mercadopago": "^2.7.0",
+    "nodemailer": "^6.9.16",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4"
+  }
+}

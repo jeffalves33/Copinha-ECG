@@ -1,0 +1,83 @@
+<!-- views/tickets/download-tickets.ejs -->
+<!DOCTYPE html>
+<html>
+
+<%- include('../partials/head', { title: 'IngressosNaJu' }) %>
+
+    <body>
+        <div class="container d-flex flex-column justify-content-center align-items-center" style="height: 100%;">
+            <div data-mdb-input-init
+                class="form-outline w-100 d-flex flex-column justify-content-center align-items-center gap-3">
+                <label class="form-label p-0" for="qtdIngressos">
+                    <h6 style="color: #89ea55">Seus ingressos</h6>
+                </label>
+                <div id="assentos-container">
+                    <!-- Os assentos serão exibidos aqui -->
+                </div>
+            </div>
+        </div>
+    </body>
+
+</html>
+<script>
+    let cadeirasList = [];
+    const userId = localStorage.getItem('userId');
+
+    window.onload = function () {
+        fetch(`search-seats-general/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                const assentosContainer = document.getElementById('assentos-container');
+                assentosContainer.innerHTML = '';
+                if (data.cadeiras && data.cadeiras.length > 0) {
+                    data.cadeiras.forEach(cadeira => {
+                        cadeirasList.push(cadeira);
+                        const assentoInfo = `
+                            <div class="row" id="${cadeira.id}">
+                                <div class="col-10">
+                                    <p class="p-2 bg-light border rounded  onclick="downloadTicket('${cadeira.id}')">
+                                        Sessão ${cadeira.sessao}, Andar ${cadeira.andar}, Fileira ${cadeira.fileira}, Poltrona ${cadeira.numero}
+                                    </p>
+                                </div>
+                                <div class="col-2">
+                                    <button class="btn btn-primary" onclick="downloadTicket('${cadeira.id}')">📥</button>
+                                </div>
+                            </div>
+                        `;
+                        assentosContainer.innerHTML += assentoInfo;
+                    });
+                } else {
+                    assentosContainer.innerHTML = '<p class="text-warning">Nenhum assento encontrado.</p>';
+                }
+            })
+            .catch(error => console.error('Erro ao buscar os assentos:', error));
+    };
+
+    function downloadTicket(idCadeira) {
+        console.log(`[INFO] Solicitando download do ticket para idCadeira: ${idCadeira}`);
+
+        fetch(`/download-tickets/${idCadeira}`)
+            .then(response => {
+                if (!response.ok) {
+                    console.error(`[ERROR] Erro ao baixar o ticket. Status: ${response.status}`);
+                    throw new Error('Erro ao baixar o ticket.');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `ticket_${idCadeira}.png`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                console.log('[INFO] Ticket baixado com sucesso.');
+            })
+            .catch(error => {
+                console.error('[ERROR] Erro ao baixar o ticket:', error);
+            });
+    }
+
+</script>

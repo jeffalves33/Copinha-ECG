@@ -1,0 +1,277 @@
+<!-- views/tickets/select-seats.ejs -->
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<%- include('../partials/head', { title: 'IngressosNaJu' }) %>
+
+  <body>
+    <div class="container">
+      <div id="carouselExampleCaptions" class="carousel slide">
+        <div class="carousel-indicators">
+          <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="0" class="active"
+            aria-current="true" aria-label="Slide 1"></button>
+          <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="1"
+            aria-label="Slide 2"></button>
+          <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="2"
+            aria-label="Slide 3"></button>
+        </div>
+        <div class="carousel-inner">
+          <div class="carousel-item active">
+            <img src="/images/andar1.png" class="d-block w-100" alt="1º andar" onclick="expandImage(this)">
+          </div>
+          <div class="carousel-item">
+            <img src="/images/andar2.png" class="d-block w-100" alt="2º andar" onclick="expandImage(this)">
+          </div>
+          <div class="carousel-item">
+            <img src="/images/andar3.png" class="d-block w-100" alt="3º andar" onclick="expandImage(this)">
+          </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleCaptions"
+          data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleCaptions"
+          data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="container mt-3 text-center" id="seatsContainer">
+      <label class="form-label p-0" for="typeNumber">
+        <h6 style="color: #89ea55">Quantidade de ingressos</h6>
+      </label>
+    </div>
+
+    <!-- Botão de continuar para o cadastramento -->
+    <div class="container d-flex flex-column justify-content-center align-items-center mt-4">
+      <button type="button" class="btn btn-success w-75 mx-4" onclick="saveTickets()">Prosseguir</button>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+      aria-labelledby="staticBackdropLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">Resumo</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
+            <button type="button" class="btn btn-primary" onclick="whatsAppPayment()">Confirmar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para visualização da imagem -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-body p-0">
+            <img id="expandedImage" src="" class="w-100">
+          </div>
+        </div>
+      </div>
+
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const qtdIngressos = parseInt(localStorage.getItem("qtdIngressos")) || 0;
+          const seatsContainer = document.getElementById("seatsContainer");
+          const sessao = localStorage.getItem('sessao');
+
+          for (let i = 1; i <= qtdIngressos; i++) {
+            const rowDiv = document.createElement("div");
+            rowDiv.className = "row d-flex justify-content-center mb-2";
+
+            const colNum = document.createElement("div");
+            colNum.className = "col-1 d-flex justify-content-center align-items-center";
+            colNum.innerHTML = `<h5 class="mb-0" style="color: #89ea55"=>${i}º</h5>`;
+
+            const colAndar = document.createElement("div");
+            colAndar.className = "col-3";
+            const andarSelect = document.createElement("select");
+            andarSelect.className = "form-select";
+            andarSelect.innerHTML = `<option selected>Andar</option>`;
+            colAndar.appendChild(andarSelect);
+
+            const colLetra = document.createElement("div");
+            colLetra.className = "col-3";
+            const fileiraSelect = document.createElement("select");
+            fileiraSelect.className = "form-select";
+            fileiraSelect.innerHTML = `<option selected>Fileira</option>`;
+            colLetra.appendChild(fileiraSelect);
+
+            const colNumero = document.createElement("div");
+            colNumero.className = "col-3";
+            const cadeiraSelect = document.createElement("select");
+            cadeiraSelect.className = "form-select";
+            cadeiraSelect.innerHTML = `<option selected>Número</option>`;
+            colNumero.appendChild(cadeiraSelect);
+
+            rowDiv.appendChild(colNum);
+            rowDiv.appendChild(colAndar);
+            rowDiv.appendChild(colLetra);
+            rowDiv.appendChild(colNumero);
+            seatsContainer.appendChild(rowDiv);
+
+            // Carregar os andares
+            fetch(`/getAndares/${sessao}`)
+              .then(response => response.json())
+              .then(data => {
+                data.andares.forEach(andar => {
+                  andarSelect.innerHTML += `<option value="${andar}">${andar}</option>`;
+                });
+              });
+
+            // Atualizar fileiras com base no andar selecionado
+            andarSelect.addEventListener('change', function () {
+              fileiraSelect.innerHTML = `<option selected>Fileira</option>`;
+              cadeiraSelect.innerHTML = `<option selected>Número</option>`;
+              fetch(`/getFileiras/${sessao}/${andarSelect.value}`)
+                .then(response => response.json())
+                .then(data => {
+                  data.fileiras.forEach(fileira => {
+                    fileiraSelect.innerHTML += `<option value="${fileira}">${fileira}</option>`;
+                  });
+                });
+            });
+
+            // Atualizar cadeiras com base na fileira selecionada
+            fileiraSelect.addEventListener('change', function () {
+              cadeiraSelect.innerHTML = `<option selected>Número</option>`;
+              fetch(`getCadeiras/${sessao}/${andarSelect.value}/${fileiraSelect.value}`)
+                .then(response => response.json())
+                .then(data => {
+                  data.cadeiras.forEach(cadeira => {
+                    cadeiraSelect.innerHTML += `<option value="${cadeira}">${cadeira}</option>`;
+                  });
+                });
+            });
+          }
+        });
+
+        function saveTickets() {
+          const rows = document.querySelectorAll("#seatsContainer .row");
+          const selectedSeats = new Set();
+          const sessaoDate = (localStorage.getItem('sessao') == 1 ? "16:00" : "19:30") + ", 15 de dezembro";
+          let finalText = `
+            <p><b>CPF:</b> ${localStorage.getItem('userCPF')}</p>
+            <p><b>email:</b> ${localStorage.getItem('userEmail')}</p>
+            <p><b>telefone:</b> ${localStorage.getItem('userPhone')}</p>
+            <p><b>Sessão:</b> ${sessaoDate}</p>
+            <p><b>Quantidade de assentos:</b> ${localStorage.getItem('qtdIngressos')}</p>
+            <p><b>Assentos:</b></p>
+            <ul>
+          `;
+
+          for (const row of rows) {
+            const selects = row.querySelectorAll("select");
+            const [andar, fileira, numero] = [selects[0].value, selects[1].value, selects[2].value];
+
+            // Verifica se todos os campos estão preenchidos
+            if (andar === "Andar" || fileira === "Fileira" || numero === "Número") {
+              alert("Por favor, preencha todos os campos para cada ingresso.");
+              return;
+            }
+
+            // Cria uma string única para cada lugar
+            const seatKey = `${andar}-${fileira}-${numero}`;
+
+            // Verifica duplicatas
+            if (selectedSeats.has(seatKey)) {
+              alert("Você selecionou assentos duplicados. Verifique os lugares escolhidos.");
+              return;
+            }
+
+            selectedSeats.add(seatKey);
+          }
+
+          const selectedSeatsArray = Array.from(selectedSeats);
+          localStorage.setItem("selectedSeats", selectedSeatsArray)
+          const modal = new bootstrap.Modal(document.getElementById('staticBackdrop'));
+          const modalBody = document.getElementsByClassName("modal-body")[0];
+          const selectedSeatsArrayStylized = selectedSeatsArray.map(row => {
+            [andar, fileira, numero] = row.split('-');
+            return `<li>Andar ${andar}, Fileira ${fileira}, Poltrona ${numero}</li>`;
+          })
+          finalText += selectedSeatsArrayStylized.join("");
+          finalText += `
+          </ul>
+          <p><b>Valor total:</b> R$${localStorage.getItem('qtdIngressos') * 67},00</p>
+        `;
+          modalBody.innerHTML = finalText;
+          modal.show();
+        }
+
+        async function whatsAppPayment() {
+          const cpf = localStorage.getItem('userCPF');
+          const email = localStorage.getItem('userEmail');
+          const telefone = localStorage.getItem('userPhone');
+          const sessao = localStorage.getItem('sessao');
+          const sessaoDate = (sessao == 1 ? "16:00" : "19:30") + ", 15 de dezembro";
+          const userId = localStorage.getItem('userId');
+          const quantidadeAssentos = localStorage.getItem('qtdIngressos');
+          const selectedSeats = localStorage.getItem("selectedSeats");
+          const selectedSeatsArray = selectedSeats.split(',').map(seat => seat.trim());
+
+          const formattedSeats = selectedSeatsArray.map(seat => {
+            const [andar, fileira, numero] = seat.split('-');
+            return `Andar ${andar}, Fileira ${fileira}, Poltrona ${numero}`;
+          }).join(' | ');
+
+          const valorTotal = `R$${quantidadeAssentos * 67},00`;
+
+          // Monta a mensagem para WhatsApp
+          const message = `
+            *Resumo do Pedido:*\n*CPF:* ${cpf}\n*Email:* ${email}\n*Telefone:* ${telefone}\n*Sessão:* ${sessaoDate}\n*Quantidade de assentos:* ${quantidadeAssentos}\n*Assentos:* ${formattedSeats}\n*Valor total:* ${valorTotal}
+          `;
+          const encodedMessage = encodeURIComponent(message);
+          const whatsappNumber = "557399435704";
+          const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+          // Preparar a lista de assentos para verificação e reserva
+          const assentos = selectedSeatsArray.map(seat => {
+            const [andar, fileira, numero] = seat.split('-');
+            return { andar, fileira, numero };
+          });
+
+          const response = await fetch(`/checkAssentosDisponiveis/${sessao}?assentos=${JSON.stringify(assentos)}`);
+          const { disponivel, assentosDisponiveis } = await response.json();
+
+          if (!disponivel) {
+            console.error("Alguns assentos já foram reservados:", assentosDisponiveis);
+            alert("Alguns dos assentos selecionados já estão reservados. Por favor, escolha outros assentos.");
+            return;
+          }
+
+          try {
+            const reservationPromises = assentos.map(({ andar, fileira, numero }) =>
+              fetch(`/getAssento/${sessao}/${andar}/${fileira}/${numero}/${userId}/${cpf}`, { method: 'POST' })
+                .then(response => response.json())
+            );
+
+            const reservationResults = await Promise.all(reservationPromises);
+            window.location.href = whatsappUrl;
+
+          } catch (error) {
+            console.error("Erro na reserva de assentos:", error);
+            alert("Houve um problema ao reservar os assentos. Por favor, tente novamente.");
+          }
+        }
+
+        function expandImage(imgElement) {
+          const expandedImage = document.getElementById("expandedImage");
+          expandedImage.src = imgElement.src;
+          const imageModal = new bootstrap.Modal(document.getElementById("imageModal"));
+          imageModal.show();
+        }
+      </script>
+
+  </body>
+
+</html>

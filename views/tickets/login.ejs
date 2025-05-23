@@ -1,0 +1,58 @@
+<!-- views/tickets/login.ejs -->
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<%- include('../partials/head', { title: 'IngressosNaJu' }) %>
+
+    <body>
+        <div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
+            <div class="card p-4" style="width: 300px;">
+                <h3 class="text-center">Login</h3>
+                <form onsubmit="authenticate(event)">
+                    <div class="form-group">
+                        <label for="username">CPF</label>
+                        <input type="text" id="userCPF" class="form-control" placeholder="CPF" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" class="form-control" placeholder="Senha" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block mt-2">Entrar</button>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const userCPF = localStorage.getItem('userCPF');
+                if (userCPF) document.getElementById("userCPF").value = userCPF;
+            });
+
+            function authenticate(event) {
+                event.preventDefault();
+
+                const userCPF = document.getElementById("userCPF").value;
+                const password = document.getElementById("password").value;
+                const userCPFLocalStorage = localStorage.getItem("userCPF");
+
+                if (userCPF == userCPFLocalStorage) {
+                    fetch(`search-password/${userCPF}/${password}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data.user != null){
+                                const ingresso = localStorage.getItem("ingresso");
+                                localStorage.setItem("userEmail", data.user.email);
+                                localStorage.setItem("userName", data.user.nome);
+                                localStorage.setItem("userPhone", data.user.phone);
+                                localStorage.setItem("userId", data.user.id);
+                                if(ingresso == "baixar") window.location.href = "/download-tickets-page";
+                                else window.location.href = "/select-tickets";
+                            }
+                        })
+                        .catch(error => console.error('Erro de autenticação:', error));
+                } else alert("CPF errado!");
+            }
+        </script>
+    </body>
+
+</html>

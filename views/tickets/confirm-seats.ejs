@@ -1,0 +1,243 @@
+<!-- views/tickets/confirm-seats.ejs -->
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<%- include('../partials/head', { title: 'IngressosNaJu' }) %>
+
+    <body>
+        <div class="container align-items-top justify-content-center" style="height: 100vh;">
+            <div class="row justify-content-center mt-2">
+                <p id="account" class="text-center" style="color: white"></p>
+            </div>
+
+            <div class="row mt-3">
+                <p class="m-1" style="color: #89ea55;">Senha do usuário</p>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="senha-input" placeholder="Digite um CPF"
+                            oninput="inputformatCPF(this)" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <button type="submit" class="btn btn-secondary" onclick="buscarUsuarioSenha()">Buscar</button>
+                </div>
+            </div>
+            <div id="senha-container" class="mb-3">
+                <!-- Os assentos serão exibidos aqui -->
+            </div>
+
+            <div class="row mt-3">
+                <p class="m-1" style="color: #89ea55;">Poltronas pendentes (CPF)</p>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="cpf-input-pendentes" placeholder="Digite um CPF"
+                            oninput="inputformatCPF(this)" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <button type="submit" class="btn btn-secondary" onclick="buscarUsuarioPendente()">Buscar</button>
+                </div>
+            </div>
+            <div id="assentos-container-pendentes" class="mb-3">
+                <!-- Os assentos serão exibidos aqui -->
+            </div>
+
+            <div class="row mt-3">
+                <p class="m-1" style="color: #89ea55;">Poltronas pagas (CPF)</p>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="cpf-input-pagos" placeholder="Digite um CPF"
+                            oninput="inputformatCPF(this)" required>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <button type="submit" class="btn btn-secondary" onclick="buscarUsuarioPagas()">Buscar</button>
+                </div>
+            </div>
+            <div id="assentos-container-pagos">
+                <!-- Os assentos serão exibidos aqui -->
+            </div>
+
+            <div class="row mt-3">
+                <p class="m-1" style="color: #89ea55;">Poltronas pendentes</p>
+            </div>
+            <div class="row">
+                <div class="col-4">
+                    <button type="submit" class="btn btn-secondary"
+                        onclick="buscarUsuarioPendenteGerais()">Buscar</button>
+                </div>
+            </div>
+            <div id="assentos-container-pendentes-gerais">
+                <!-- Os assentos serão exibidos aqui -->
+            </div>
+        </div>
+        <script>
+            window.onload = function () {
+                const minhaVariavel = localStorage.getItem('admin');
+                if (!minhaVariavel) window.location.href = '/admin';
+
+                fetch(`dashboard/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const [paymentSuccess, paymentPedding] = [data.paymentSuccess, data.paymentPedding];
+                        const elementP = document.getElementById('account');
+                        elementP.innerHTML = `vendidos: ${paymentSuccess} (R$${paymentSuccess * 67},00), pendentes: ${paymentPedding}`;
+                    })
+                    .catch(error => console.error('Erro ao buscar', error));
+            }
+
+            function inputformatCPF(input) {
+                let value = input.value.replace(/\D/g, '');
+                if (value.length > 3) value = value.slice(0, 3) + '.' + value.slice(3);
+                if (value.length > 7) value = value.slice(0, 7) + '.' + value.slice(7);
+                if (value.length > 11) value = value.slice(0, 11) + '-' + value.slice(11, 13);
+                input.value = value;
+            }
+
+            function confirmaPagamento(idCadeira) {
+                fetch(`confirm-Payment/${idCadeira}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const elementRemove = document.getElementById(data.id);
+                        elementRemove.remove();
+                    })
+                    .catch(error => console.error('Erro ao confirmar pagamento:', error));
+            }
+
+            function negarPagamento(idCadeira) {
+                fetch(`deny-payment/${idCadeira}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const elementRemove = document.getElementById(data.id);
+                        elementRemove.remove();
+                    })
+                    .catch(error => console.error('Erro ao negar pagamento:', error));
+            }
+
+            function buscarUsuarioSenha() {
+                const cpfInput = document.getElementById('senha-input').value;
+                if (cpfInput.length === 14) {
+                    fetch(`search-password/${cpfInput}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const assentosContainer = document.getElementById('senha-container');
+                            assentosContainer.innerHTML = '';
+
+                            if (data.senha) {
+                                const assentoInfo = `
+                                    <div class="col-12">
+                                        <p class="p-1 bg-light rounded">${data.senha}</p>
+                                    </div>
+                                `;
+                                assentosContainer.innerHTML += assentoInfo;
+                            } else {
+                                assentosContainer.innerHTML = '<p class="text-warning">Nenhuma senha encontrada.</p>';
+                            }
+                        })
+                        .catch(error => console.error('Erro ao buscar os assentos:', error));
+                }
+            }
+
+            function buscarUsuarioPendente() {
+                const cpfInput = document.getElementById('cpf-input-pendentes').value;
+                if (cpfInput.length === 14) {
+                    fetch(`search-seats-pending/${cpfInput}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const assentosContainer = document.getElementById('assentos-container-pendentes');
+                            assentosContainer.innerHTML = '';
+
+                            if (data.cadeiras && data.cadeiras.length > 0) {
+                                data.cadeiras.forEach(cadeira => {
+                                    const assentoInfo = `
+                                        <div class="row mb-2" id="${cadeira.id}">
+                                            <div class="col-5">
+                                                <p class="p-2 bg-light border rounded">
+                                                    Sessão ${cadeira.sessao}, Andar ${cadeira.andar}, Fileira ${cadeira.fileira}, Poltrona ${cadeira.numero}
+                                                </p>
+                                            </div>
+                                            <div class="col-2 d-flex align-items-center">
+                                                <button type="submit" class="btn btn-success" onclick="confirmaPagamento('${cadeira.id}')">✔️</button>
+                                            </div>
+                                            <div class="col-2 d-flex align-items-center">
+                                                <button type="submit" class="btn btn-danger" onclick="negarPagamento('${cadeira.id}')">❌</button>
+                                            </div>
+                                        </div>
+                                    `;
+                                    assentosContainer.innerHTML += assentoInfo;
+                                });
+                            } else {
+                                assentosContainer.innerHTML = '<p class="text-warning">Nenhum assento encontrado.</p>';
+                            }
+                        })
+                        .catch(error => console.error('Erro ao buscar os assentos:', error));
+                }
+            }
+
+            function buscarUsuarioPendenteGerais() {
+                fetch(`search-seats-pending-general`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const assentosContainer = document.getElementById('assentos-container-pendentes-gerais');
+                        assentosContainer.innerHTML = '';
+                        if (data.cadeiras && data.cadeiras.length > 0) {
+                            data.cadeiras.forEach(cadeira => {
+                                const assentoInfo = `
+                                    <div class="row mt-2" id="${cadeira.id}">
+                                        <div class="col-5">
+                                            <p class="p-2 bg-light border rounded">
+                                                Sessão ${cadeira.sessao}, Andar ${cadeira.andar}, Fileira ${cadeira.fileira}, Poltrona ${cadeira.numero}, CPF: ${cadeira.qrcode_content.cpf}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `;
+                                assentosContainer.innerHTML += assentoInfo;
+                            });
+                        } else assentosContainer.innerHTML = '<p class="text-warning">Nenhum assento encontrado.</p>';
+                    })
+                    .catch(error => console.error('Erro ao buscar os assentos:', error));
+
+            }
+
+            function buscarUsuarioPagas() {
+                const cpfInput = document.getElementById('cpf-input-pagos').value;
+                if (cpfInput.length === 14) {
+                    fetch(`search-seats-paid/${cpfInput}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const assentosContainer = document.getElementById('assentos-container-pagos');
+                            assentosContainer.innerHTML = '';
+
+                            if (data.cadeiras && data.cadeiras.length > 0) {
+                                data.cadeiras.forEach(cadeira => {
+                                    const assentoInfo = `
+                                        <div class="row mb-2" id="${cadeira.id}">
+                                            <div class="col-5">
+                                                <p class="p-2 bg-light border rounded">
+                                                    Sessão ${cadeira.sessao}, Andar ${cadeira.andar}, Fileira ${cadeira.fileira}, Poltrona ${cadeira.numero}
+                                                </p>
+                                            </div>
+                                            <div class="col-2 d-flex align-items-center">
+                                                <button type="submit" class="btn btn-danger" onclick="negarPagamento('${cadeira.id}')">❌</button>
+                                            </div>
+                                        </div>
+                                    `;
+                                    assentosContainer.innerHTML += assentoInfo;
+                                });
+                            } else {
+                                assentosContainer.innerHTML = '<p class="text-warning">Nenhum assento encontrado.</p>';
+                            }
+                        })
+                        .catch(error => console.error('Erro ao buscar os assentos:', error));
+                }
+            }
+        </script>
+    </body>
+
+</html>

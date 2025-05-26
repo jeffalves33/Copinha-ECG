@@ -19,35 +19,37 @@ const mercadopago = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAG
 const payment = new Payment(mercadopago);
 
 router.post('/webhook/mercadopago', async (req, res) => {
+    console.log('Webhook recebido:', JSON.stringify(req.body, null, 2));
+    res.sendStatus(200); // responde imediatamente
+
+    const paymentId = req.body.data?.id;
+    const topic = req.body.type;
+
+    if (topic !== 'payment' || !paymentId) {
+        console.warn('Webhook ignorado ou inválido.');
+        return;
+    }
+
     try {
-        const paymentId = req.body.data && req.body.data.id;
-        const topic = req.body.type;
-        console.log('Webhook recebido:', JSON.stringify(req.body, null, 2));
-
-        if (topic !== 'payment') {
-            return res.sendStatus(200); // Ignora eventos não relacionados a pagamento
-        }
-
-        const paymentInfo = await payment.get(paymentId); // <- OK agora
+        const paymentInfo = await payment.get(paymentId);
         const status = paymentInfo.status;
         const preferenceId = paymentInfo.preference_id;
 
-        // Atualiza o banco de dados
         const { error } = await supabase
             .from('Tickets')
             .update({ status })
             .eq('payment_id', paymentId);
 
         if (error) {
-            console.error('Erro ao atualizar pagamento no banco:', error);
+            console.error('Erro ao atualizar pagamento:', error);
+        } else {
+            console.log('Pagamento atualizado:', paymentId, status);
         }
-
-        res.sendStatus(200);
     } catch (err) {
-        console.error('Erro no webhook do Mercado Pago:', err);
-        res.sendStatus(500);
+        console.error('Erro ao processar webhook:', err);
     }
 });
+
 
 // ========== ROTA: Resumo + Criação de Preference no Mercado Pago ==========
 router.get('/summary', async (req, res) => {

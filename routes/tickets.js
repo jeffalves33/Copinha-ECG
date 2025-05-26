@@ -24,6 +24,8 @@ router.post('/webhook/mercadopago', async (req, res) => {
 
     const paymentId = req.body.data?.id;
     const topic = req.body.type;
+    console.log("paymentId: ", paymentId)
+    console.log("topic: ", topic)
 
     if (topic !== 'payment' || !paymentId) {
         console.warn('Webhook ignorado ou inválido.');
@@ -78,9 +80,9 @@ router.get('/summary', async (req, res) => {
                     installments: 2, // permite parcelar até 12x
                 },
                 back_urls: {
-                    success: 'https://copinha-ecg.onrender.com/pagamento/sucesso',
-                    failure: 'https://copinha-ecg.onrender.com/pagamento/falha',
-                    pending: 'https://copinha-ecg.onrender.com/pagamento/pendente',
+                    success: 'https://copinha-ecg.onrender.com/sucesso',
+                    failure: 'https://copinha-ecg.onrender.com/falha',
+                    pending: 'https://copinha-ecg.onrender.com/pendente',
                 },
                 auto_return: 'approved', // Funciona APENAS se o back_urls.success estiver definido
             }

@@ -67,9 +67,14 @@ router.get('/summary', async (req, res) => {
                         title: 'Nome do ingresso',
                         quantity: 1,
                         currency_id: 'BRL',
-                        unit_price: 0.1,
+                        unit_price: 1,
                     }
                 ],
+                payment_methods: {
+                    excluded_payment_types: [],
+                    excluded_payment_methods: [],
+                    installments: 2, // permite parcelar até 12x
+                },
                 back_urls: {
                     success: 'https://copinha-ecg.onrender.com/pagamento/sucesso',
                     failure: 'https://copinha-ecg.onrender.com/pagamento/falha',

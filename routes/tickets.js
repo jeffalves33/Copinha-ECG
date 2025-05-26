@@ -19,39 +19,49 @@ const mercadopago = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAG
 const payment = new Payment(mercadopago);
 
 router.post('/webhook/mercadopago', async (req, res) => {
-    console.log('Webhook recebido:', JSON.stringify(req.body, null, 2));
-    res.sendStatus(200); // responde imediatamente
+    console.log('🔔 Webhook recebido:', JSON.stringify(req.body, null, 2));
+    res.sendStatus(200); // responde imediatamente para o Mercado Pago
 
     const paymentId = req.body.data?.id;
     const topic = req.body.type;
-    console.log("paymentId: ", paymentId)
-    console.log("topic: ", topic)
+
+    console.log('💳 paymentId:', paymentId);
+    console.log('📦 topic:', topic);
 
     if (topic !== 'payment' || !paymentId) {
-        console.warn('Webhook ignorado ou inválido.');
+        console.warn('⚠️ Webhook ignorado: topic diferente de payment ou paymentId ausente');
         return;
     }
 
     try {
-        const paymentInfo = await payment.get(paymentId);
-        const status = paymentInfo.status;
-        const preferenceId = paymentInfo.preference_id;
+        const response = await payment.get({ id: paymentId });
+        const data = response;
 
+        console.log('✅ Dados do pagamento:', data);
+
+        // 🔥 Aqui você pode validar o pagamento e atualizar no Supabase
+        const status = data.status;
+        const email = data.payer.email;
+        const amount = data.transaction_amount;
+
+        console.log(`💰 Status: ${status}, Email: ${email}, Valor: ${amount}`);
+
+        // Exemplo: atualizar na tabela 'pagamentos'
         const { error } = await supabase
-            .from('Tickets')
+            .from('pagamentos')
             .update({ status })
             .eq('payment_id', paymentId);
 
         if (error) {
-            console.error('Erro ao atualizar pagamento:', error);
+            console.error('❌ Erro ao atualizar no Supabase:', error);
         } else {
-            console.log('Pagamento atualizado:', paymentId, status);
+            console.log('✅ Pagamento atualizado no Supabase com sucesso!');
         }
+
     } catch (err) {
-        console.error('Erro ao processar webhook:', err);
+        console.error('❌ Erro ao consultar pagamento:', err);
     }
 });
-
 
 // ========== ROTA: Resumo + Criação de Preference no Mercado Pago ==========
 router.get('/summary', async (req, res) => {
@@ -80,9 +90,9 @@ router.get('/summary', async (req, res) => {
                     installments: 2, // permite parcelar até 12x
                 },
                 back_urls: {
-                    success: 'https://copinha-ecg.onrender.com/sucesso',
-                    failure: 'https://copinha-ecg.onrender.com/falha',
-                    pending: 'https://copinha-ecg.onrender.com/pendente',
+                    success: 'https://copinha-ecg.onrender.com/success',
+                    failure: 'https://copinha-ecg.onrender.com/failure',
+                    pending: 'https://copinha-ecg.onrender.com/pending',
                 },
                 auto_return: 'approved', // Funciona APENAS se o back_urls.success estiver definido
             }

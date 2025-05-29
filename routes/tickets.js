@@ -20,13 +20,10 @@ const payment = new Payment(mercadopago);
 
 router.post('/webhook/mercadopago', async (req, res) => {
     console.log('🔔 Webhook recebido:', JSON.stringify(req.body, null, 2));
-    res.sendStatus(200); // responde imediatamente para o Mercado Pago
+    res.sendStatus(200);
 
     const paymentId = req.body.data?.id;
     const topic = req.body.type;
-
-    console.log('💳 paymentId:', paymentId);
-    console.log('📦 topic:', topic);
 
     if (topic !== 'payment' || !paymentId) {
         console.warn('⚠️ Webhook ignorado: topic diferente de payment ou paymentId ausente');
@@ -37,27 +34,56 @@ router.post('/webhook/mercadopago', async (req, res) => {
         const response = await payment.get({ id: paymentId });
         const data = response;
 
-        console.log('✅ Dados do pagamento:', data);
-
-        // 🔥 Aqui você pode validar o pagamento e atualizar no Supabase
         const status = data.status;
+        const userId = data.metadata.userId;
         const email = data.payer.email;
+        const userTicket = data.metadata.userTicket
         const amount = data.transaction_amount;
 
-        console.log(`💰 Status: ${status}, Email: ${email}, Valor: ${amount}`);
+        console.log(`💰 Status: ${status}, Ticket: ${userTicket}, Valor: ${amount}`);
 
-        // Exemplo: atualizar na tabela 'pagamentos'
-        const { error } = await supabase
-            .from('pagamentos')
-            .update({ status })
-            .eq('payment_id', paymentId);
+        const { data: ticket, error: fetchError } = await supabase
+            .from('tickets')
+            .select('*')
+            .eq('id', userTicket)
+            .eq('status', 'pending')
+            .limit(1)
+            .single();
 
-        if (error) {
-            console.error('❌ Erro ao atualizar no Supabase:', error);
-        } else {
-            console.log('✅ Pagamento atualizado no Supabase com sucesso!');
+        if (fetchError || !ticket) {
+            console.error('❌ Ticket não encontrado:', fetchError);
+            return;
         }
 
+        let qrcodeData = null;
+        if (status === 'approved') {
+            qrcodeData = {
+                ticket_id: ticket.id,
+                payment_id: paymentId,
+                quantidade: ticket.quantidade,
+                buyer_email: email
+            };
+        }
+
+        const { error: updateError } = await supabase
+            .from('tickets')
+            .update({
+                status: status,
+                payment_id: paymentId,
+                qrcode_data: qrcodeData,
+                updated_at: new Date()
+            })
+            .eq('id', ticket.id);
+
+        if (updateError) {
+            console.error('❌ Erro ao atualizar ticket:', updateError);
+        } else {
+            console.log('✅ Ticket atualizado com sucesso!');
+            if (status === 'approved') {
+                // 🔥 Aqui você pode disparar o envio de e-mail com QRCode
+                console.log('📧 Enviar email com QRCode...');
+            }
+        }
     } catch (err) {
         console.error('❌ Erro ao consultar pagamento:', err);
     }
@@ -67,34 +93,72 @@ router.post('/webhook/mercadopago', async (req, res) => {
 router.get('/summary', async (req, res) => {
     try {
         const qty = parseInt(req.query.qtd, 10);
+        const userId = req.query.userId;
+        console.log(" userId:", userId)
+
         if (!qty || qty <= 0) {
             return res.status(400).send('Quantidade inválida.');
         }
 
-        const unitPrice = 10; // R$100,00
+        const unitPrice = 1;
         const total = unitPrice * qty;
+
+        const { data: users, error: errorUser } = await supabase
+            .from('Users')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (errorUser) {
+            console.error('❌ Erro ao buscar usuário no banco:', errorUser);
+            return res.status(500).send('Erro ao buscar usuário.');
+        }
+
+        const { data: ticket, error: errorTickets } = await supabase
+            .from('tickets')
+            .insert([{
+                user_id: userId,
+                buyer_email: users.email || null,
+                status: 'pending',
+                quantidade: qty,
+                qrcode_data: null,
+                created_at: new Date(),
+                updated_at: new Date(),
+                payment_id: null
+            }])
+            .select();
+
+        if (errorTickets) {
+            console.error('❌ Erro ao criar ticket no banco:', errorTickets);
+            return res.status(500).send('Erro ao criar ticket.');
+        }
 
         const preference = await new Preference(mercadopago).create({
             body: {
                 items: [
                     {
-                        title: 'Nome do ingresso',
-                        quantity: 1,
+                        title: 'Ingresso Copinha ECG',
+                        quantity: qty,
                         currency_id: 'BRL',
-                        unit_price: 1,
+                        unit_price: unitPrice,
                     }
                 ],
                 payment_methods: {
                     excluded_payment_types: [],
                     excluded_payment_methods: [],
-                    installments: 2, // permite parcelar até 12x
+                    installments: 2,
                 },
                 back_urls: {
                     success: 'https://copinha-ecg.onrender.com/success',
                     failure: 'https://copinha-ecg.onrender.com/failure',
                     pending: 'https://copinha-ecg.onrender.com/pending',
                 },
-                auto_return: 'approved', // Funciona APENAS se o back_urls.success estiver definido
+                auto_return: 'approved',
+                metadata: {
+                    qty,
+                    userTicket: ticket.id || '',
+                    userId: users.id || '',
+                }
             }
         });
 
@@ -107,7 +171,7 @@ router.get('/summary', async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error('❌ Erro na rota /summary:', err);
         res.status(500).send('Erro no pagamento');
     }
 });

@@ -20,7 +20,8 @@
     const inputTickets = document.getElementById("qtdIngressos").value;
     if(inputTickets > 0){
       localStorage.setItem("qtdIngressos", parseInt(inputTickets));
-      window.location.href = `/tickets/summary?qtd=${inputTickets}`;
+      const userId = localStorage.getItem("userId")
+      window.location.href = `/tickets/summary?qtd=${inputTickets}&userId=${userId}`;
     }
   }
 </script>

@@ -26,7 +26,7 @@ router.post('/webhook/mercadopago', async (req, res) => {
     const topic = req.body.type;
 
     if (topic !== 'payment' || !paymentId) {
-        console.warn('⚠️ Webhook ignorado: topic diferente de payment ou paymentId ausente');
+        console.warn('⚠️ Webhook ignorado. Motivo: topic diferente de payment ou paymentId ausente');
         return;
     }
 
@@ -36,10 +36,15 @@ router.post('/webhook/mercadopago', async (req, res) => {
         console.log('🔍 Dados do pagamento:', JSON.stringify(data, null, 2));
 
         const status = data.status;
-        const userId = data.metadata.userId;
-        const email = data.payer.email;
-        const userTicket = data.metadata.userTicket
+        const userId = data.metadata?.userId;
+        const userTicket = data.metadata?.userTicket;
+        const email = data.payer?.email;
         const amount = data.transaction_amount;
+
+        if (!userTicket || !userId) {
+            console.warn('⚠️ Metadata incompleta. userTicket ou userId ausente.');
+            return;
+        }
 
         console.log(`💰 Status: ${status}, Ticket: ${userTicket}, Valor: ${amount}`);
 
@@ -48,28 +53,29 @@ router.post('/webhook/mercadopago', async (req, res) => {
             .select('*')
             .eq('id', userTicket)
             .eq('status', 'pending')
-            .limit(1)
             .single();
 
-        if (fetchError || !ticket) {
-            console.error('❌ Ticket não encontrado:', fetchError);
+        if (fetchError) {
+            console.error('❌ Erro ao buscar ticket:', fetchError.message);
             return;
         }
 
-        let qrcodeData = null;
-        if (status === 'approved') {
-            qrcodeData = {
-                ticket_id: ticket.id,
-                payment_id: paymentId,
-                quantidade: ticket.quantidade,
-                buyer_email: email
-            };
+        if (!ticket) {
+            console.warn(`❗ Ticket não encontrado ou já processado. ID: ${userTicket}`);
+            return;
         }
+
+        const qrcodeData = (status === 'approved') ? {
+            ticket_id: ticket.id,
+            payment_id: paymentId,
+            quantidade: ticket.quantidade,
+            buyer_email: email
+        } : null;
 
         const { error: updateError } = await supabase
             .from('tickets')
             .update({
-                status: status,
+                status,
                 payment_id: paymentId,
                 qrcode_data: qrcodeData,
                 updated_at: new Date()
@@ -77,16 +83,17 @@ router.post('/webhook/mercadopago', async (req, res) => {
             .eq('id', ticket.id);
 
         if (updateError) {
-            console.error('❌ Erro ao atualizar ticket:', updateError);
+            console.error('❌ Erro ao atualizar ticket:', updateError.message);
         } else {
             console.log('✅ Ticket atualizado com sucesso!');
             if (status === 'approved') {
-                // 🔥 Aqui você pode disparar o envio de e-mail com QRCode
                 console.log('📧 Enviar email com QRCode...');
+                // Você pode disparar aqui uma função de envio de e-mail
             }
         }
+
     } catch (err) {
-        console.error('❌ Erro ao consultar pagamento:', err);
+        console.error('❌ Erro na consulta do pagamento ou processamento:', err.message || err);
     }
 });
 
@@ -95,31 +102,40 @@ router.get('/summary', async (req, res) => {
     try {
         const qty = parseInt(req.query.qtd, 10);
         const userId = req.query.userId;
-        console.log(" userId:", userId)
+
+        console.log("📥 Params recebidos => Quantidade:", qty, "UserId:", userId);
 
         if (!qty || qty <= 0) {
+            console.warn('⚠️ Quantidade inválida:', qty);
             return res.status(400).send('Quantidade inválida.');
+        }
+
+        if (!userId) {
+            console.warn('⚠️ userId ausente na query');
+            return res.status(400).send('Usuário não identificado.');
         }
 
         const unitPrice = 1;
         const total = unitPrice * qty;
 
-        const { data: users, error: errorUser } = await supabase
+        const { data: user, error: errorUser } = await supabase
             .from('Users')
             .select('*')
             .eq('id', userId)
-            .maybeSingle();
+            .single();
 
         if (errorUser) {
-            console.error('❌ Erro ao buscar usuário no banco:', errorUser);
+            console.error('❌ Erro ao buscar usuário:', errorUser.message);
             return res.status(500).send('Erro ao buscar usuário.');
         }
+
+        console.log("👤 Usuário encontrado:", user);
 
         const { data: ticket, error: errorTickets } = await supabase
             .from('tickets')
             .insert([{
                 user_id: userId,
-                buyer_email: users.email || null,
+                buyer_email: user.email || null,
                 status: 'pending',
                 quantidade: qty,
                 qrcode_data: null,
@@ -130,40 +146,40 @@ router.get('/summary', async (req, res) => {
             .select();
 
         if (errorTickets) {
-            console.error('❌ Erro ao criar ticket no banco:', errorTickets);
+            console.error('❌ Erro ao criar ticket:', errorTickets.message);
             return res.status(500).send('Erro ao criar ticket.');
         }
 
-        console.log("Ingresso: ", ticket[0])
+        console.log("🎟️ Ticket criado:", ticket[0]);
 
         const preference = await new Preference(mercadopago).create({
             body: {
-                items: [
-                    {
-                        title: 'Ingresso Copinha ECG',
-                        quantity: qty,
-                        currency_id: 'BRL',
-                        unit_price: unitPrice,
-                    }
-                ],
+                items: [{
+                    title: 'Ingresso Copinha ECG',
+                    quantity: qty,
+                    currency_id: 'BRL',
+                    unit_price: unitPrice
+                }],
                 payment_methods: {
                     excluded_payment_types: [],
                     excluded_payment_methods: [],
-                    installments: 2,
+                    installments: 2
                 },
                 back_urls: {
                     success: 'https://copinha-ecg.onrender.com/success',
                     failure: 'https://copinha-ecg.onrender.com/failure',
-                    pending: 'https://copinha-ecg.onrender.com/pending',
+                    pending: 'https://copinha-ecg.onrender.com/pending'
                 },
                 auto_return: 'approved',
                 metadata: {
                     qty,
                     userTicket: ticket[0].id || '',
-                    userId: users.id || '',
+                    userId: user.id || ''
                 }
             }
         });
+
+        console.log('🧾 Preference criada com sucesso:', preference.id);
 
         res.render('tickets/summary', {
             qty,
@@ -174,8 +190,8 @@ router.get('/summary', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('❌ Erro na rota /summary:', err);
-        res.status(500).send('Erro no pagamento');
+        console.error('❌ Erro na rota /summary:', err.message || err);
+        res.status(500).send('Erro no processamento do pagamento.');
     }
 });
 

@@ -19,7 +19,6 @@ const mercadopago = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAG
 const payment = new Payment(mercadopago);
 
 router.post('/webhook/mercadopago', async (req, res) => {
-    console.log('🔔 Webhook recebido:', JSON.stringify(req.body, null, 2));
     res.sendStatus(200);
 
     const paymentId = req.body.data?.id;
@@ -33,7 +32,6 @@ router.post('/webhook/mercadopago', async (req, res) => {
     try {
         const response = await payment.get({ id: paymentId });
         const data = response;
-        console.log('🔍 Dados do pagamento:', JSON.stringify(data, null, 2));
 
         const status = data.status;
         const userId = data.metadata?.user_id;
@@ -103,8 +101,6 @@ router.get('/summary', async (req, res) => {
         const qty = parseInt(req.query.qtd, 10);
         const userId = req.query.userId;
 
-        console.log("📥 Params recebidos => Quantidade:", qty, "UserId:", userId);
-
         if (!qty || qty <= 0) {
             console.warn('⚠️ Quantidade inválida:', qty);
             return res.status(400).send('Quantidade inválida.');
@@ -129,8 +125,6 @@ router.get('/summary', async (req, res) => {
             return res.status(500).send('Erro ao buscar usuário.');
         }
 
-        console.log("👤 Usuário encontrado:", user);
-
         const { data: ticket, error: errorTickets } = await supabase
             .from('tickets')
             .insert([{
@@ -152,14 +146,22 @@ router.get('/summary', async (req, res) => {
 
         console.log("🎟️ Ticket criado:", ticket[0]);
 
+        const external_reference = "pedido" + userId; 
+
         const preference = await new Preference(mercadopago).create({
             body: {
                 items: [{
                     title: 'Ingresso Copinha ECG',
                     quantity: qty,
                     currency_id: 'BRL',
-                    unit_price: unitPrice
+                    unit_price: unitPrice,
+                    category_id: "services",
+                    description: "Quantidade de ingressos para evento Copinha ECG"
                 }],
+                payer: {
+                    first_name: user.nome || ''
+                },
+                external_reference: external_reference,
                 payment_methods: {
                     excluded_payment_types: [],
                     excluded_payment_methods: [],

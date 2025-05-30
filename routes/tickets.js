@@ -18,6 +18,76 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 const mercadopago = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN });
 const payment = new Payment(mercadopago);
 
+async function generateQRCode(data) {
+    try {
+        return await QRCode.toBuffer(JSON.stringify(data));
+    } catch (err) {
+        console.error('[ERROR] Erro ao gerar QR Code:', err);
+        throw err;
+    }
+}
+
+// Função para criar o ticket com QRCode
+async function createEventTicket(user) {
+    try {
+        const image = await Jimp.read(path.join(__dirname, '..', 'public', 'images', 'ticket.png'));
+        const fontPath = path.join(__dirname, '..', 'public', 'fonts', 'open-sans', 'open-sans-32-white', 'open-sans-32-white.fnt');
+        const font = await Jimp.loadFont(fontPath);
+
+        const text1 = `${user.nome} | ${user.payment_id}`;
+        const text2 = `Quantidade: ${user.quantidade}`;
+
+        image.print(font, 15, 590, text1);
+        image.print(font, 10, 625, text2);
+
+        const qrCode = await generateQRCode(user);
+        const qrImage = await Jimp.read(qrCode);
+        qrImage.resize(300, 300);
+        image.composite(qrImage, 210, 700);
+
+        return new Promise((resolve, reject) => {
+            image.getBuffer(Jimp.MIME_PNG, (err, buffer) => {
+                if (err) {
+                    console.error('[ERROR] Erro ao converter imagem em buffer:', err);
+                    reject(err);
+                } else {
+                    resolve(buffer);
+                }
+            });
+        });
+    } catch (err) {
+        console.error('[ERROR] Erro ao criar o ticket:', err);
+        throw err;
+    }
+}
+
+// Função para enviar e-mail
+async function sendEmailWithTicket(to, buffer) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'seuemail@gmail.com', // seu email
+            pass: 'suasenhaouappkey'    // sua senha de app
+        }
+    });
+
+    const mailOptions = {
+        from: '"Seu Evento" <seuemail@gmail.com>',
+        to: to,
+        subject: 'Seu ingresso para o evento!',
+        text: 'Olá! Segue em anexo seu ingresso com QRCode.',
+        attachments: [
+            {
+                filename: 'ticket.png',
+                content: buffer
+            }
+        ]
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('📨 E-mail enviado para:', to);
+}
+
 router.post('/webhook/mercadopago', async (req, res) => {
     res.sendStatus(200);
 
@@ -83,12 +153,36 @@ router.post('/webhook/mercadopago', async (req, res) => {
         if (updateError) {
             console.error('❌ Erro ao atualizar ticket:', updateError.message);
         } else {
-            console.log('✅ Ticket atualizado com sucesso!');
             if (status === 'approved') {
-                console.log('📧 Enviar email com QRCode...');
-                // Você pode disparar aqui uma função de envio de e-mail
+                try {
+                    const { data: user, error: erroUser } = await supabase
+                        .from('Users')
+                        .select()
+                        .eq('id', userId);
+
+                    if (erroUser || !user || user.length === 0) {
+                        console.error('[ERROR] Erro ao buscar usuário para envio do e-mail:', erroUser);
+                        return;
+                    }
+
+                    const userJson = {
+                        ...qrcodeData,
+                        email: user[0].email,
+                        nome: user[0].nome,
+                    };
+
+                    const ticketBuffer = await createEventTicket(userJson);
+
+                    await sendEmailWithTicket(user[0].email, ticketBuffer);
+
+                    console.log('✅ E-mail com ticket enviado com sucesso!');
+
+                } catch (err) {
+                    console.error('❌ Erro ao gerar ticket ou enviar e-mail:', err);
+                }
             }
         }
+
 
     } catch (err) {
         console.error('❌ Erro na consulta do pagamento ou processamento:', err.message || err);
@@ -146,7 +240,7 @@ router.get('/summary', async (req, res) => {
 
         console.log("🎟️ Ticket criado:", ticket[0]);
 
-        const external_reference = "pedido" + userId; 
+        const external_reference = "pedido" + userId;
 
         const preference = await new Preference(mercadopago).create({
             body: {
@@ -285,33 +379,6 @@ router.get('/search-password/:cpf/:password', async (req, res) => {
     return res.status(200).json({ message: 'Senha incorreta', user: null });
 });
 
-router.get('/search-seats-pending/:cpf', async (req, res) => {
-    const { cpf } = req.params;
-    const { data, error } = await supabase
-        .from('Users')
-        .select('id')
-        .eq('cpf', cpf);
-    if (error) return res.status(500).json({ error: error.message });
-    if (data.length == 0) return res.status(500).json({ error: "CPF não encontrado" });
-    const idUser = data[0].id;
-    const { data: lugares, error: errorLugares } = await supabase
-        .from('Cadeiras')
-        .select()
-        .eq('user', idUser)
-        .eq('payment', 'P');
-    if (error) return res.status(500).json({ error: errorLugares.message });
-    res.json({ cadeiras: lugares });
-});
-
-router.get('/search-seats-pending-general', async (req, res) => {
-    const { data, error } = await supabase
-        .from('Cadeiras')
-        .select()
-        .eq('payment', 'P');
-    if (error) return res.status(500).json({ error: error.message });
-    res.json({ cadeiras: data });
-});
-
 router.get('/search-seats-general/:userId', async (req, res) => {
     const { userId } = req.params;
     const { data, error } = await supabase
@@ -324,88 +391,8 @@ router.get('/search-seats-general/:userId', async (req, res) => {
     res.json({ tickets: data });
 });
 
-router.get('/search-seats-paid/:cpf', async (req, res) => {
-    const { cpf } = req.params;
-    const { data, error } = await supabase
-        .from('Users')
-        .select('id')
-        .eq('cpf', cpf);
-    if (error) return res.status(500).json({ error: error.message });
-    if (data.length == 0) return res.status(500).json({ error: "CPF não encontrado" });
-    const idUser = data[0].id;
-    const { data: lugares, error: errorLugares } = await supabase
-        .from('Cadeiras')
-        .select()
-        .eq('user', idUser)
-        .eq('payment', 'S');
-    if (error) return res.status(500).json({ error: errorLugares.message });
-    res.json({ cadeiras: lugares });
-});
-
 router.get('/download-tickets/:ticketId', async (req, res) => {
     const { ticketId } = req.params;
-
-    async function generateQRCode(data) {
-        try {
-            return await QRCode.toBuffer(JSON.stringify(data));
-        } catch (err) {
-            console.error('[ERROR] Erro ao gerar QR Code:', err);
-            throw err;
-        }
-    }
-
-    function measureTextWidth(text, font) {
-        const canvas = createCanvas(1, 1);
-        const context = canvas.getContext('2d');
-        context.font = font;
-        return context.measureText(text).width;
-    }
-
-    async function createEventTicket(user) {
-        try {
-            const image = await Jimp.read(path.join(__dirname, '..', 'public', 'images', 'ticket.png'));
-
-            const fontPath = path.join(__dirname, '..', 'public', 'fonts', 'open-sans', 'open-sans-32-white', 'open-sans-32-white.fnt');
-            const font = await Jimp.loadFont(fontPath);
-
-            const text1 = `${user.nome} | ${user.payment_id}`;
-            const text2 = `Quantidade: ${user.quantidade}`;
-
-            const textWidth1 = measureTextWidth(text1, "32px Arial");
-            const textWidth2 = measureTextWidth(text2, "32px Arial");
-            const centerX = image.bitmap.width / 2;
-
-            const margin = 20;
-            const adjustedCenterX1 = Math.min(centerX - (textWidth1 / 2), image.bitmap.width - margin);
-            const adjustedCenterX2 = Math.min(centerX - (textWidth2 / 2), image.bitmap.width - margin);
-
-            image.print(font, 15, 590, text1);
-            image.print(font, 10, 625, text2);
-
-            const qrCode = await generateQRCode(user);
-            const qrImage = await Jimp.read(qrCode);
-            qrImage.resize(300, 300);
-            image.composite(qrImage, 210, 700);
-
-            console.log('[INFO] QR Code adicionado ao ticket.');
-
-            return new Promise((resolve, reject) => {
-                image.getBuffer(Jimp.MIME_PNG, (err, buffer) => {
-                    if (err) {
-                        console.error('[ERROR] Erro ao converter imagem em buffer:', err);
-                        reject(err);
-                    } else {
-                        console.log('[INFO] Ticket gerado com sucesso.');
-                        resolve(buffer);
-                    }
-                });
-            });
-
-        } catch (err) {
-            console.error('[ERROR] Erro ao criar o ticket:', err);
-            throw err;
-        }
-    }
 
     try {
         const { data: cadeiraSearch, error: erroCadeiraSearch } = await supabase
@@ -490,56 +477,5 @@ router.post('/authenticate', async (req, res) => {
     if (error) return res.status(500).json({ message: 'Erro ao criar usuário', success: false });
     return res.status(200).json({ message: 'Usuário criado', success: true, user: data[0] });
 });
-
-/*router.get('/created-qrcode-json', async (req, res) => {
-    let qtd_cadeiras = 0;
-    const { data: users, error: errorUsers } = await supabase
-        .from('Users')
-        .select('*');
-
-    if (errorUsers) {
-        console.error('Erro ao buscar usuários:', errorUsers);
-        return res.status(500).send('Erro ao buscar usuários');
-    }
-
-    for (const user of users) {
-        console.log(user)
-        const { data: cadeiras, error: errorCadeiras } = await supabase
-            .from('Cadeiras')
-            .select('*')
-            .eq('user', user.id)
-            .eq('payment', 'S')
-            .eq('disponivel', false);
-
-        if (errorCadeiras) {
-            console.error(`Erro ao buscar cadeiras para o usuário ${user.id}:`, errorCadeiras);
-            continue;
-        }
-        for (const cadeira of cadeiras) {
-            const qrcodeContent = {
-                idUser: user.id,
-                sessao: cadeira.sessao,
-                andar: cadeira.andar,
-                fileira: cadeira.fileira,
-                numero: cadeira.numero,
-                cpf: user.cpf,
-            };
-
-            const { error: errorUpdate } = await supabase
-                .from('Cadeiras')
-                .update({ qrcode_content: qrcodeContent })
-                .eq('id', cadeira.id);
-
-            if (errorUpdate) {
-                console.error(`Erro ao atualizar cadeira ${cadeira.id} do usuário ${user.id}:`, errorUpdate);
-            } else {
-                console.log(`QR code atualizado para a cadeira ${cadeira.id} do usuário ${user.id}`);
-            }
-        }
-        qtd_cadeiras += 1;
-    }
-    console.log("quantidade de cadeiras modificadas: " + qtd_cadeiras);
-    res.status(200).send();
-});*/
 
 module.exports = router;

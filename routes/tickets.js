@@ -134,7 +134,7 @@ router.get('/summary', async (req, res) => {
             return res.status(500).send('Erro ao criar ticket.');
         }
 
-        console.log("Ingresso: ", ticket)
+        console.log("Ingresso: ", ticket[0])
 
         const preference = await new Preference(mercadopago).create({
             body: {
@@ -159,7 +159,7 @@ router.get('/summary', async (req, res) => {
                 auto_return: 'approved',
                 metadata: {
                     qty,
-                    userTicket: ticket.id || '',
+                    userTicket: ticket[0].id || '',
                     userId: users.id || '',
                 }
             }

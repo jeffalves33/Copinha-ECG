@@ -226,16 +226,16 @@ router.get('/pending', (req, res) => {
 router.get('/dashboard', async (req, res) => {
     let paymentSuccess, paymentPedding;
     const { data: dataSuccess, error: errorSuccess, count: countSuccess } = await supabase
-        .from('Cadeiras')
-        .select('payment', { count: 'exact' })
-        .eq('payment', 'S');
+        .from('tickets')
+        .select('status', { count: 'exact' })
+        .eq('status', 'approved');
     if (errorSuccess) return res.status(500).json({ error: errorSuccess.message });
     paymentSuccess = countSuccess;
 
     const { data: dataPedding, error: errorPedding, count: countPedding } = await supabase
-        .from('Cadeiras')
-        .select('payment', { count: 'exact' })
-        .eq('payment', 'P');
+        .from('tickets')
+        .select('status', { count: 'exact' })
+        .eq('status', 'pending');
     if (errorPedding) return res.status(500).json({ error: errorPedding.message });
     paymentPedding = countPedding;
 

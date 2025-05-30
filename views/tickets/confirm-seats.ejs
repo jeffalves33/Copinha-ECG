@@ -29,25 +29,7 @@
             </div>
 
             <div class="row mt-3">
-                <p class="m-1" style="color: #89ea55;">Poltronas pendentes (CPF)</p>
-            </div>
-            <div class="row">
-                <div class="col-6">
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="cpf-input-pendentes" placeholder="Digite um CPF"
-                            oninput="inputformatCPF(this)" required>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <button type="submit" class="btn btn-secondary" onclick="buscarUsuarioPendente()">Buscar</button>
-                </div>
-            </div>
-            <div id="assentos-container-pendentes" class="mb-3">
-                <!-- Os assentos serão exibidos aqui -->
-            </div>
-
-            <div class="row mt-3">
-                <p class="m-1" style="color: #89ea55;">Poltronas pagas (CPF)</p>
+                <p class="m-1" style="color: #89ea55;">Baixar Ingressos (CPF)</p>
             </div>
             <div class="row">
                 <div class="col-6">
@@ -57,25 +39,13 @@
                     </div>
                 </div>
                 <div class="col-4">
-                    <button type="submit" class="btn btn-secondary" onclick="buscarUsuarioPagas()">Buscar</button>
+                    <button type="submit" class="btn btn-secondary" onclick="">Buscar</button>
                 </div>
             </div>
             <div id="assentos-container-pagos">
                 <!-- Os assentos serão exibidos aqui -->
             </div>
 
-            <div class="row mt-3">
-                <p class="m-1" style="color: #89ea55;">Poltronas pendentes</p>
-            </div>
-            <div class="row">
-                <div class="col-4">
-                    <button type="submit" class="btn btn-secondary"
-                        onclick="buscarUsuarioPendenteGerais()">Buscar</button>
-                </div>
-            </div>
-            <div id="assentos-container-pendentes-gerais">
-                <!-- Os assentos serão exibidos aqui -->
-            </div>
         </div>
         <script>
             window.onload = function () {
@@ -87,7 +57,7 @@
                     .then(data => {
                         const [paymentSuccess, paymentPedding] = [data.paymentSuccess, data.paymentPedding];
                         const elementP = document.getElementById('account');
-                        elementP.innerHTML = `vendidos: ${paymentSuccess} (R$${paymentSuccess * 67},00), pendentes: ${paymentPedding}`;
+                        elementP.innerHTML = `vendidos: ${paymentSuccess} (R$${paymentSuccess * 25},00), pendentes: ${paymentPedding}`;
                     })
                     .catch(error => console.error('Erro ao buscar', error));
             }
@@ -98,16 +68,6 @@
                 if (value.length > 7) value = value.slice(0, 7) + '.' + value.slice(7);
                 if (value.length > 11) value = value.slice(0, 11) + '-' + value.slice(11, 13);
                 input.value = value;
-            }
-
-            function confirmaPagamento(idCadeira) {
-                fetch(`confirm-Payment/${idCadeira}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const elementRemove = document.getElementById(data.id);
-                        elementRemove.remove();
-                    })
-                    .catch(error => console.error('Erro ao confirmar pagamento:', error));
             }
 
             function negarPagamento(idCadeira) {
@@ -144,99 +104,6 @@
                 }
             }
 
-            function buscarUsuarioPendente() {
-                const cpfInput = document.getElementById('cpf-input-pendentes').value;
-                if (cpfInput.length === 14) {
-                    fetch(`search-seats-pending/${cpfInput}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const assentosContainer = document.getElementById('assentos-container-pendentes');
-                            assentosContainer.innerHTML = '';
-
-                            if (data.cadeiras && data.cadeiras.length > 0) {
-                                data.cadeiras.forEach(cadeira => {
-                                    const assentoInfo = `
-                                        <div class="row mb-2" id="${cadeira.id}">
-                                            <div class="col-5">
-                                                <p class="p-2 bg-light border rounded">
-                                                    Sessão ${cadeira.sessao}, Andar ${cadeira.andar}, Fileira ${cadeira.fileira}, Poltrona ${cadeira.numero}
-                                                </p>
-                                            </div>
-                                            <div class="col-2 d-flex align-items-center">
-                                                <button type="submit" class="btn btn-success" onclick="confirmaPagamento('${cadeira.id}')">✔️</button>
-                                            </div>
-                                            <div class="col-2 d-flex align-items-center">
-                                                <button type="submit" class="btn btn-danger" onclick="negarPagamento('${cadeira.id}')">❌</button>
-                                            </div>
-                                        </div>
-                                    `;
-                                    assentosContainer.innerHTML += assentoInfo;
-                                });
-                            } else {
-                                assentosContainer.innerHTML = '<p class="text-warning">Nenhum assento encontrado.</p>';
-                            }
-                        })
-                        .catch(error => console.error('Erro ao buscar os assentos:', error));
-                }
-            }
-
-            function buscarUsuarioPendenteGerais() {
-                fetch(`search-seats-pending-general`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const assentosContainer = document.getElementById('assentos-container-pendentes-gerais');
-                        assentosContainer.innerHTML = '';
-                        if (data.cadeiras && data.cadeiras.length > 0) {
-                            data.cadeiras.forEach(cadeira => {
-                                const assentoInfo = `
-                                    <div class="row mt-2" id="${cadeira.id}">
-                                        <div class="col-5">
-                                            <p class="p-2 bg-light border rounded">
-                                                Sessão ${cadeira.sessao}, Andar ${cadeira.andar}, Fileira ${cadeira.fileira}, Poltrona ${cadeira.numero}, CPF: ${cadeira.qrcode_content.cpf}
-                                            </p>
-                                        </div>
-                                    </div>
-                                `;
-                                assentosContainer.innerHTML += assentoInfo;
-                            });
-                        } else assentosContainer.innerHTML = '<p class="text-warning">Nenhum assento encontrado.</p>';
-                    })
-                    .catch(error => console.error('Erro ao buscar os assentos:', error));
-
-            }
-
-            function buscarUsuarioPagas() {
-                const cpfInput = document.getElementById('cpf-input-pagos').value;
-                if (cpfInput.length === 14) {
-                    fetch(`search-seats-paid/${cpfInput}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const assentosContainer = document.getElementById('assentos-container-pagos');
-                            assentosContainer.innerHTML = '';
-
-                            if (data.cadeiras && data.cadeiras.length > 0) {
-                                data.cadeiras.forEach(cadeira => {
-                                    const assentoInfo = `
-                                        <div class="row mb-2" id="${cadeira.id}">
-                                            <div class="col-5">
-                                                <p class="p-2 bg-light border rounded">
-                                                    Sessão ${cadeira.sessao}, Andar ${cadeira.andar}, Fileira ${cadeira.fileira}, Poltrona ${cadeira.numero}
-                                                </p>
-                                            </div>
-                                            <div class="col-2 d-flex align-items-center">
-                                                <button type="submit" class="btn btn-danger" onclick="negarPagamento('${cadeira.id}')">❌</button>
-                                            </div>
-                                        </div>
-                                    `;
-                                    assentosContainer.innerHTML += assentoInfo;
-                                });
-                            } else {
-                                assentosContainer.innerHTML = '<p class="text-warning">Nenhum assento encontrado.</p>';
-                            }
-                        })
-                        .catch(error => console.error('Erro ao buscar os assentos:', error));
-                }
-            }
         </script>
     </body>
 

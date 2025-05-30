@@ -33,6 +33,7 @@ router.post('/webhook/mercadopago', async (req, res) => {
     try {
         const response = await payment.get({ id: paymentId });
         const data = response;
+        console.log('🔍 Dados do pagamento:', JSON.stringify(data, null, 2));
 
         const status = data.status;
         const userId = data.metadata.userId;
@@ -132,6 +133,8 @@ router.get('/summary', async (req, res) => {
             console.error('❌ Erro ao criar ticket no banco:', errorTickets);
             return res.status(500).send('Erro ao criar ticket.');
         }
+
+        console.log("Ingresso: ", ticket)
 
         const preference = await new Preference(mercadopago).create({
             body: {

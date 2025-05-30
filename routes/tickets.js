@@ -204,28 +204,11 @@ router.get('/success', async (req, res) => {
             return res.send('Pagamento não aprovado.');
         }
 
-        const paymentInfo = await payment.get(collection_id);
-        const payment = paymentInfo;
+        return res.render('tickets/thankyou');
 
-        const qty = payment.additional_info.items[0].quantity;
-        const total = Math.round(payment.transaction_amount * 100);
-
-        const { data, error } = await supabase
-            .from('Tickets')
-            .insert({
-                quantity: qty,
-                amount: total,
-                preference_id: preference_id,
-                payment_id: collection_id,
-                status: 'approved'
-            });
-
-        if (error) console.error('Erro ao salvar ticket:', error);
-
-        res.render('tickets/thankyou');
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Erro no sucesso');
+        console.error('❌ Erro na rota /success:', err.message || err);
+        return res.status(500).send('Erro no sucesso');
     }
 });
 

@@ -36,8 +36,8 @@ router.post('/webhook/mercadopago', async (req, res) => {
         console.log('🔍 Dados do pagamento:', JSON.stringify(data, null, 2));
 
         const status = data.status;
-        const userId = data.metadata?.userId;
-        const userTicket = data.metadata?.userTicket;
+        const userId = data.metadata?.user_id;
+        const userTicket = data.metadata?.user_ticket;
         const email = data.payer?.email;
         const amount = data.transaction_amount;
 

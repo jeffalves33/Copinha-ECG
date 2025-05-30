@@ -20,7 +20,8 @@
 
 </html>
 <script>
-    let cadeirasList = [];
+    let ticketsList = [];
+    let cont = 1;
     const userId = localStorage.getItem('userId');
 
     window.onload = function () {
@@ -29,22 +30,23 @@
             .then(data => {
                 const assentosContainer = document.getElementById('assentos-container');
                 assentosContainer.innerHTML = '';
-                if (data.cadeiras && data.cadeiras.length > 0) {
-                    data.cadeiras.forEach(cadeira => {
-                        cadeirasList.push(cadeira);
+                if (data.tickets && data.tickets.length > 0) {
+                    data.tickets.forEach(ticket => {
+                        ticketsList.push(ticket);
                         const assentoInfo = `
-                            <div class="row" id="${cadeira.id}">
+                            <div class="row" id="${ticket.id}">
                                 <div class="col-10">
-                                    <p class="p-2 bg-light border rounded  onclick="downloadTicket('${cadeira.id}')">
-                                        Sessão ${cadeira.sessao}, Andar ${cadeira.andar}, Fileira ${cadeira.fileira}, Poltrona ${cadeira.numero}
+                                    <p class="p-2 bg-light border rounded  onclick="downloadTicket('${ticket.id}')">
+                                        ${cont} - Quantidade: ${ticket.quantidade}
                                     </p>
                                 </div>
                                 <div class="col-2">
-                                    <button class="btn btn-primary" onclick="downloadTicket('${cadeira.id}')">📥</button>
+                                    <button class="btn btn-primary" onclick="downloadTicket('${ticket.id}')">📥</button>
                                 </div>
                             </div>
                         `;
                         assentosContainer.innerHTML += assentoInfo;
+                        cont += 1;
                     });
                 } else {
                     assentosContainer.innerHTML = '<p class="text-warning">Nenhum assento encontrado.</p>';
@@ -53,10 +55,8 @@
             .catch(error => console.error('Erro ao buscar os assentos:', error));
     };
 
-    function downloadTicket(idCadeira) {
-        console.log(`[INFO] Solicitando download do ticket para idCadeira: ${idCadeira}`);
-
-        fetch(`/download-tickets/${idCadeira}`)
+    function downloadTicket(ticketId) {
+        fetch(`/download-tickets/${ticketId}`)
             .then(response => {
                 if (!response.ok) {
                     console.error(`[ERROR] Erro ao baixar o ticket. Status: ${response.status}`);
@@ -69,7 +69,7 @@
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = `ticket_${idCadeira}.png`;
+                a.download = `ticket_${ticketId}.png`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);

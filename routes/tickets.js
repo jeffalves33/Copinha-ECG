@@ -315,12 +315,13 @@ router.get('/search-seats-pending-general', async (req, res) => {
 router.get('/search-seats-general/:userId', async (req, res) => {
     const { userId } = req.params;
     const { data, error } = await supabase
-        .from('Cadeiras')
+        .from('tickets')
         .select()
-        .eq('payment', 'S')
-        .eq('user', userId);
+        .eq('status', 'approved')
+        .eq('user_id', userId);
     if (error) return res.status(500).json({ error: error.message });
-    res.json({ cadeiras: data });
+
+    res.json({ tickets: data });
 });
 
 router.get('/search-seats-paid/:cpf', async (req, res) => {
@@ -341,10 +342,8 @@ router.get('/search-seats-paid/:cpf', async (req, res) => {
     res.json({ cadeiras: lugares });
 });
 
-router.get('/download-tickets/:idCadeira', async (req, res) => {
-    const { idCadeira } = req.params;
-
-    console.log(`[INFO] Iniciando geração do ticket para idCadeira: ${idCadeira}`);
+router.get('/download-tickets/:ticketId', async (req, res) => {
+    const { ticketId } = req.params;
 
     async function generateQRCode(data) {
         try {
@@ -364,27 +363,22 @@ router.get('/download-tickets/:idCadeira', async (req, res) => {
 
     async function createEventTicket(user) {
         try {
-            const sessao = user.sessao == 1 ? 'sessao1.png' : 'sessao2.png';
-            console.log(`[INFO] Selecionando imagem da sessão: ${sessao}`);
-            const image = await Jimp.read(path.join(__dirname, '..', 'public', 'images', sessao));
+            const image = await Jimp.read(path.join(__dirname, '..', 'public', 'images', 'ticket.png'));
 
             const fontPath = path.join(__dirname, '..', 'public', 'fonts', 'open-sans', 'open-sans-32-white', 'open-sans-32-white.fnt');
             const font = await Jimp.loadFont(fontPath);
-            console.log('[INFO] Fonte carregada com sucesso.');
 
-            const text1 = `${user.nome} | ${user.cpf}`;
-            const text2 = `Sessão: ${user.sessao}, Andar: ${user.andar}, Fileira: ${user.fileira}, Poltrona: ${user.numero}`;
+            const text1 = `${user.nome} | ${user.payment_id}`;
+            const text2 = `Quantidade: ${user.quantidade}`;
 
             const textWidth1 = measureTextWidth(text1, "32px Arial");
             const textWidth2 = measureTextWidth(text2, "32px Arial");
             const centerX = image.bitmap.width / 2;
 
-            // Ajusta a posição do texto de acordo com a resolução da imagem
-            const margin = 20; // margem para não colar nas bordas
+            const margin = 20;
             const adjustedCenterX1 = Math.min(centerX - (textWidth1 / 2), image.bitmap.width - margin);
             const adjustedCenterX2 = Math.min(centerX - (textWidth2 / 2), image.bitmap.width - margin);
 
-            // Ajusta para a largura máxima da imagem (evita que texto ultrapasse as bordas)
             image.print(font, 15, 590, text1);
             image.print(font, 10, 625, text2);
 
@@ -415,9 +409,9 @@ router.get('/download-tickets/:idCadeira', async (req, res) => {
 
     try {
         const { data: cadeiraSearch, error: erroCadeiraSearch } = await supabase
-            .from('Cadeiras')
+            .from('tickets')
             .select()
-            .eq('id', idCadeira);
+            .eq('id', ticketId);
 
         if (erroCadeiraSearch) {
             console.error('[ERROR] Erro ao buscar cadeira no Supabase:', erroCadeiraSearch);
@@ -429,12 +423,10 @@ router.get('/download-tickets/:idCadeira', async (req, res) => {
             return res.status(404).json({ message: 'Cadeira não encontrada.' });
         }
 
-        console.log(`[INFO] Cadeira encontrada: ${JSON.stringify(cadeiraSearch[0])}`);
-
         const { data: user, error: erroUser } = await supabase
             .from('Users')
             .select()
-            .eq('id', cadeiraSearch[0].user);
+            .eq('id', cadeiraSearch[0].user_id);
 
         if (erroUser) {
             console.error('[ERROR] Erro ao buscar usuário no Supabase:', erroUser);
@@ -446,25 +438,21 @@ router.get('/download-tickets/:idCadeira', async (req, res) => {
             return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
 
-        console.log(`[INFO] Usuário encontrado: ${JSON.stringify(user[0])}`);
-
-        if (!cadeiraSearch[0].qrcode_content || cadeiraSearch[0].qrcode_content == null) {
-            console.error('[ERROR] qrcode_content está vazio ou nulo.');
-            return res.status(500).json({ message: 'qrcode_content é nulo' });
+        if (!cadeiraSearch[0].qrcode_data || cadeiraSearch[0].qrcode_data == null) {
+            console.error('[ERROR] qrcode_data está vazio ou nulo.');
+            return res.status(500).json({ message: 'qrcode_data é nulo' });
         }
 
         const userJson = {
-            ...cadeiraSearch[0].qrcode_content,
+            ...cadeiraSearch[0].qrcode_data,
             email: user[0].email,
             nome: user[0].nome,
         };
 
-        console.log(`[INFO] Dados para geração do ticket: ${JSON.stringify(userJson)}`);
-
         const ticketBuffer = await createEventTicket(userJson);
 
         res.set('Content-Type', 'image/png');
-        res.set('Content-Disposition', `attachment; filename=ticket_${idCadeira}.png`);
+        res.set('Content-Disposition', `attachment; filename=ticket_${user[0].id}.png`);
         console.log('[INFO] Enviando ticket para o cliente.');
         return res.send(ticketBuffer);
 

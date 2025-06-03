@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<%- include('../partials/head', { title: 'Pagamento Pendente' }) %>
+
+    <body>
+        <div class="container py-5 text-center">
+            <h2>Pagamento em Análise</h2>
+            <p>Estamos aguardando a confirmação do seu pagamento.</p>
+            <div class="spinner-border text-primary my-4" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Verificando status...</p>
+        </div>
+
+        <script>
+            const paymentId = "<%= paymentId %>";
+
+            async function checkPayment() {
+                try {
+                    const res = await fetch(`/checkpayment?paymentId=${paymentId}`);
+                    const data = await res.json();
+
+                    console.log("🔍 Status:", data.status);
+
+                    if (data.status === 'approved') {
+                        window.location.href = '/success?collection_id=' + paymentId + '&collection_status=approved&preference_id=<%= preferenceId %>';
+                    }
+                    // Se quiser, pode tratar rejeitado ou cancelado aqui
+                    else if (data.status === 'rejected' || data.status === 'cancelled') {
+                        alert('Pagamento não foi aprovado. Por favor, tente novamente.');
+                        window.location.href = '/';
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar pagamento:', error);
+                }
+            }
+
+            setInterval(checkPayment, 3000);
+        </script>
+    </body>
+
+</html>

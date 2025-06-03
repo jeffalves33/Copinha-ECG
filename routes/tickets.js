@@ -189,7 +189,6 @@ router.post('/webhook/mercadopago', async (req, res) => {
     }
 });
 
-// ========== ROTA: Resumo + Criação de Preference no Mercado Pago ==========
 router.get('/summary', async (req, res) => {
     try {
         const qty = parseInt(req.query.qtd, 10);
@@ -291,7 +290,6 @@ router.get('/summary', async (req, res) => {
     }
 });
 
-// ========== ROTA: Sucesso do pagamento – gravar no banco e renderizar página “Obrigado” ==========
 router.get('/success', async (req, res) => {
     try {
         const { collection_id, collection_status, preference_id } = req.query;
@@ -308,13 +306,44 @@ router.get('/success', async (req, res) => {
     }
 });
 
-// ========== Rotas opcionais para failure/pending (caso queira) ==========
 router.get('/failure', (req, res) => {
     return res.send('Pagamento não concluído. Você pode tentar novamente.');
 });
 
 router.get('/pending', (req, res) => {
-    return res.send('Pagamento em análise. Assim que confirmado, enviaremos um e-mail com instruções.');
+    const { collection_id, preference_id } = req.query;
+
+    if (!collection_id || !preference_id) {
+        return res.send('Informações de pagamento não encontradas.');
+    }
+
+    return res.render('tickets/pending', {
+        paymentId: collection_id,
+        preferenceId: preference_id
+    });
+});
+
+router.get('/checkpayment', async (req, res) => {
+    const { paymentId } = req.query;
+
+    if (!paymentId) {
+        return res.status(400).json({ error: 'paymentId não informado' });
+    }
+
+    try {
+        const response = await payment.get({ id: paymentId });
+        const data = response;
+
+        const status = data.status;
+
+        console.log(`🔍 Verificando pagamento ${paymentId} - Status: ${status}`);
+
+        return res.json({ status });
+
+    } catch (error) {
+        console.error('❌ Erro ao verificar pagamento:', error.message || error);
+        return res.status(500).json({ error: 'Erro ao verificar pagamento' });
+    }
 });
 
 router.get('/dashboard', async (req, res) => {

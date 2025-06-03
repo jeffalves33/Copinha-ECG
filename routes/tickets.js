@@ -66,16 +66,16 @@ async function sendEmailWithTicket(to, buffer) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: 'seuemail@gmail.com', // seu email
-            pass: 'suasenhaouappkey'    // sua senha de app
+            user: 'espetaculoecg@gmail.com',
+            pass: 'vykstszlqkynelxw'
         }
     });
 
     const mailOptions = {
-        from: '"Seu Evento" <seuemail@gmail.com>',
+        from: '"Copinha ECG" <espetaculoecg@gmail.com>',
         to: to,
         subject: 'Seu ingresso para o evento!',
-        text: 'Olá! Segue em anexo seu ingresso com QRCode.',
+        text: 'Olá! Segue em anexo seus ingressos.',
         attachments: [
             {
                 filename: 'ticket.png',

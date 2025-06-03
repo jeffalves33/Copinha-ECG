@@ -1,53 +1,56 @@
-<!-- views/index.ejs -->
 <!DOCTYPE html>
 <html>
 <%- include('partials/head', { title: 'IngressosNaJu' }) %>
 
-  <body>
-    <div class="container d-flex flex-column justify-content-center align-items-center" style="height: 100%;">
-      <img src="/images/logo_original.png" class="mb-5" alt="Imagem do Evento">
-      <div class="row justify-content-center w-100">
-        <button type="button" class="btn btn-success w-75 my-2 mx-4" data-bs-toggle="modal"
+  <body class="d-flex flex-column justify-content-center align-items-center vh-100 bg-dark">
+    <div class="text-center p-4">
+      <img src="/images/logo_original.png" class="img-fluid mb-5" alt="IngressosNaJu Logo" style="max-width: 250px;">
+
+      <div class="d-grid gap-3 col-10 col-sm-8 col-md-6 col-lg-4 mx-auto">
+        <button type="button" class="btn btn-success btn-lg shadow-sm" data-bs-toggle="modal"
           data-bs-target="#loginComprarModal">Comprar Ingressos</button>
-      </div>
-      <div class="row justify-content-center w-100">
-        <button type="button" class="btn btn-info w-75 my-2 mx-4" data-bs-toggle="modal"
-          data-bs-target="#loginBaixarModal">Baixar ingressos</button>
-      </div>
-      <div class="row justify-content-center w-100">
-        <button type="button" class="btn btn-secondary w-75 my-2 mx-4" data-bs-toggle="modal"
+        <button type="button" class="btn btn-info btn-lg shadow-sm" data-bs-toggle="modal"
+          data-bs-target="#loginBaixarModal">Baixar Ingressos</button>
+        <button type="button" class="btn btn-secondary btn-lg shadow-sm"
           onclick="window.open('https://wa.me/557399435704?text=Vim%20do%20site', '_blank')">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp"
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-whatsapp me-2"
             viewBox="0 0 16 16">
             <path
               d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />
           </svg>
-          WhatsApp</button>
+          WhatsApp
+        </button>
       </div>
-      <div class="row justify-content-center w-100 align-items-center">
-        <p style="color: #9c9c9c; text-align: center;">criado por <i>IngressosNaJu</i></p>
-      </div>
+
+      <p class="text-muted mt-4 mb-0"><small>criado por <i>IngressosNaJu</i></small></p>
     </div>
+
 
     <div class="modal fade" id="loginComprarModal" tabindex="-1" aria-labelledby="loginComprarModalLabel"
       aria-hidden="true">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h1 class="modal-title fs-5" id="loginComprarModalLabel">Autenticação</h1>
+            <h5 class="modal-title" id="loginComprarModalLabel">Autenticação para Compra</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body" id="modal-body-login">
-            <form id="loginForm">
+          <div class="modal-body">
+            <form id="loginComprarForm">
               <div class="mb-3">
-                <label for="cpf-input" class="col-form-label">CPF:</label>
-                <input type="text" class="form-control cpf-input-comprar" id="cpf-input" placeholder="Digite seu CPF"
-                  oninput="inputformatCPF(this)" required>
+                <label for="cpf-input-comprar-modal" class="form-label">CPF:</label>
+                <input type="text" class="form-control form-control-lg" id="cpf-input-comprar-modal"
+                  placeholder="Digite seu CPF" oninput="inputformatCPF(this)" required>
+                <div class="invalid-feedback" id="cpfErrorComprar">
+                  Por favor, insira um CPF válido (11 dígitos).
+                </div>
               </div>
             </form>
+            <div id="modal-messages-comprar" class="mt-3">
+            </div>
           </div>
           <div class="modal-footer">
-            <button type="submit" class="btn btn-success" onclick="authenticateUser('comprar')">Entrar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success" onclick="authenticateUser('comprar')">Continuar</button>
           </div>
         </div>
       </div>
@@ -55,23 +58,29 @@
 
     <div class="modal fade" id="loginBaixarModal" tabindex="-1" aria-labelledby="loginBaixarModalLabel"
       aria-hidden="true">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h1 class="modal-title fs-5" id="loginBaixarModalLabel">Autenticação</h1>
+            <h5 class="modal-title" id="loginBaixarModalLabel">Autenticação para Download</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="loginForm">
+            <form id="loginBaixarForm">
               <div class="mb-3">
-                <label for="cpf-input" class="col-form-label">CPF:</label>
-                <input type="text" class="form-control cpf-input-baixar" placeholder="Digite seu CPF"
-                  oninput="inputformatCPF(this)" required>
+                <label for="cpf-input-baixar-modal" class="form-label">CPF:</label>
+                <input type="text" class="form-control form-control-lg" id="cpf-input-baixar-modal"
+                  placeholder="Digite seu CPF" oninput="inputformatCPF(this)" required>
+                <div class="invalid-feedback" id="cpfErrorBaixar">
+                  Por favor, insira um CPF válido (11 dígitos).
+                </div>
               </div>
             </form>
+            <div id="modal-messages-baixar" class="mt-3">
+            </div>
           </div>
           <div class="modal-footer">
-            <button type="submit" class="btn btn-secondary" onclick="authenticateUser('baixar')">Entrar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-info" onclick="authenticateUser('baixar')">Continuar</button>
           </div>
         </div>
       </div>
@@ -79,51 +88,88 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+        // Clear localStorage on page load (ensure fresh start for user flow)
         localStorage.clear();
+
+        // Reset modal states when they are hidden
+        const loginComprarModal = document.getElementById('loginComprarModal');
+        loginComprarModal.addEventListener('hidden.bs.modal', function () {
+          document.getElementById('cpf-input-comprar-modal').value = '';
+          document.getElementById('cpf-input-comprar-modal').classList.remove('is-invalid');
+          document.getElementById('modal-messages-comprar').innerHTML = '';
+        });
+
+        const loginBaixarModal = document.getElementById('loginBaixarModal');
+        loginBaixarModal.addEventListener('hidden.bs.modal', function () {
+          document.getElementById('cpf-input-baixar-modal').value = '';
+          document.getElementById('cpf-input-baixar-modal').classList.remove('is-invalid');
+          document.getElementById('modal-messages-baixar').innerHTML = '';
+        });
       });
 
       function inputformatCPF(input) {
-        let value = input.value.replace(/\D/g, '');
+        let value = input.value.replace(/\D/g, ''); // Remove non-digits
         if (value.length > 3) value = value.slice(0, 3) + '.' + value.slice(3);
         if (value.length > 7) value = value.slice(0, 7) + '.' + value.slice(7);
         if (value.length > 11) value = value.slice(0, 11) + '-' + value.slice(11, 13);
         input.value = value;
+
+        // Clear validation state if input is being changed
+        input.classList.remove('is-invalid');
+        const targetModalId = input.closest('.modal').id;
+        const messagesContainerId = targetModalId === 'loginComprarModal' ? 'modal-messages-comprar' : 'modal-messages-baixar';
+        document.getElementById(messagesContainerId).innerHTML = '';
       }
 
-      function authenticateUser(input) {
-        const cpfInput = (input === "comprar") ? document.getElementsByClassName('cpf-input-comprar')[0].value : document.getElementsByClassName('cpf-input-baixar')[0].value;
-        const cpfError = document.getElementById('cpfError');
+      async function authenticateUser(type) {
+        const cpfInputId = type === "comprar" ? "cpf-input-comprar-modal" : "cpf-input-baixar-modal";
+        const cpfInput = document.getElementById(cpfInputId);
+        const formattedCpf = cpfInput.value;
+        const cleanCpf = formattedCpf.replace(/\D/g, ''); // Get only digits for validation
 
-        if (cpfInput.length === 14) {
-          fetch(`search-user-cpf/${cpfInput}`)
-            .then(response => response.json())
-            .then(data => {
-              localStorage.setItem('userCPF', cpfInput);
-              if (data.user !== null) {
-                if (input == "baixar") localStorage.setItem("ingresso", "baixar");
-                const modalBodyLogin = document.getElementById('modal-body-login');
-                const alertSuccess = document.createElement("div")
-                alertSuccess.className = "alert alert-success";
-                alertSuccess.innerHTML = `CPF encontrado, faça login!`;
-                modalBodyLogin.appendChild(alertSuccess)
-                setTimeout(() => {
-                  window.location.href = '/login';
-                }, 2000);
-              }
-              else {
-                const modalBodyLogin = document.getElementById('modal-body-login');
-                const alertSuccess = document.createElement("div")
-                alertSuccess.className = "alert alert-danger";
-                alertSuccess.innerHTML = `CPF não encontrado, faça cadastro!`;
-                modalBodyLogin.appendChild(alertSuccess)
-                setTimeout(() => {
-                  window.location.href = '/register';
-                }, 2000);
-              }
-            });
-        } else cpfError.style.display = 'block';
+        const messagesContainerId = type === 'comprar' ? 'modal-messages-comprar' : 'modal-messages-baixar';
+        const messagesContainer = document.getElementById(messagesContainerId);
+        messagesContainer.innerHTML = ''; // Clear previous messages
+
+        // Simple client-side validation for CPF length
+        if (cleanCpf.length !== 11) {
+          cpfInput.classList.add('is-invalid'); // Add Bootstrap's invalid style
+          messagesContainer.innerHTML = `<div class="alert alert-danger mt-2" role="alert">Por favor, insira um CPF válido com 11 dígitos.</div>`;
+          return;
+        }
+
+        cpfInput.classList.remove('is-invalid'); // Remove invalid state if valid
+
+        try {
+          const response = await fetch(`search-user-cpf/${formattedCpf}`); // Use formatted CPF for the request
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+
+          localStorage.setItem('userCPF', formattedCpf);
+
+          if (data.user !== null) {
+            localStorage.setItem("ingresso", type); // Store 'comprar' or 'baixar'
+            displayMessage(messagesContainer, "CPF encontrado, faça login!", "success");
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 1500); // Shorter timeout for smoother UX
+          } else {
+            displayMessage(messagesContainer, "CPF não encontrado, faça cadastro!", "danger");
+            setTimeout(() => {
+              window.location.href = '/register';
+            }, 1500); // Shorter timeout for smoother UX
+          }
+        } catch (error) {
+          console.error('Erro na autenticação de CPF:', error);
+          displayMessage(messagesContainer, "Ocorreu um erro. Tente novamente.", "danger");
+        }
       }
 
+      function displayMessage(container, message, type) {
+        container.innerHTML = `<div class="alert alert-${type}" role="alert">${message}</div>`;
+      }
     </script>
   </body>
 

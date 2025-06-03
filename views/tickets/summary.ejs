@@ -3,32 +3,42 @@
 <html>
 <%- include('../partials/head', { title: 'Resumo de Pagamento' }) %>
 
-    <body>
+    <body class="d-flex justify-content-center align-items-center vh-100 bg-dark">
         <div class="container py-5">
-            <h2>Resumo do Pedido</h2>
-            <p>Quantidade: <%= qty %>
-            </p>
-            <p>Valor unitário: R$ <%= unitPrice.toFixed(2) %>
-            </p>
-            <h4>Total: R$ <%= total.toFixed(2) %>
-            </h4>
+            <div class="card mx-auto" style="max-width: 500px;">
+                <div class="card-body text-center">
+                    <h2 class="card-title mb-4">Resumo do Pedido</h2>
+                    <p class="card-text lead">
+                        Quantidade: <strong>
+                            <%= qty %>
+                        </strong>
+                    </p>
+                    <p class="card-text lead">
+                        Valor unitário: <strong>R$ <%= unitPrice.toFixed(2) %></strong>
+                    </p>
+                    <hr>
+                    <h4 class="card-text mb-4">Total: <strong>R$ <%= total.toFixed(2) %></strong></h4>
 
-            <div id="wallet_container"></div>
-
-            <script src="https://sdk.mercadopago.com/js/v2"></script>
-            <script>
-                const mp = new MercadoPago('<%= publicKey %>', { locale: 'pt-BR' });
-                mp.checkout({
-                    preference: {
-                        id: '<%= preferenceId %>'
-                    },
-                    render: {
-                        container: '#wallet_container',
-                        label: 'Pagar agora'
-                    }
-                });
-            </script>
+                    <div class="d-flex justify-content-center mt-4">
+                        <div id="wallet_container"></div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <script src="https://sdk.mercadopago.com/js/v2"></script>
+        <script>
+            const mp = new MercadoPago('<%= publicKey %>', { locale: 'pt-BR' });
+            mp.checkout({
+                preference: {
+                    id: '<%= preferenceId %>'
+                },
+                render: {
+                    container: '#wallet_container',
+                    label: 'Pagar agora'
+                }
+            });
+        </script>
     </body>
 
 </html>

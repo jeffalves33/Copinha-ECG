@@ -4,24 +4,33 @@
 
 <%- include('../partials/head', { title: 'IngressosNaJu' }) %>
 
-  <body>
-    <div class="container d-flex flex-column justify-content-center align-items-center"  style="height: 100%;">
-      <div data-mdb-input-init class="form-outline w-50 d-flex flex-column justify-content-center align-items-center gap-3">
-        <label class="form-label p-0" for="qtdIngressos"><h6 style="color: #89ea55">Quantidade de ingressos</h6></label>
-        <input type="number" id="qtdIngressos" class="form-control mb-3" min="1" max="10"/>
-        <button type="button" class="btn btn-success w-75 mx-4" onclick="saveQtdTickets()">Confirmar</button>
-      </div>
+<body class="d-flex justify-content-center align-items-center vh-100 bg-dark">
+    <div class="card p-4 shadow-lg" style="max-width: 400px; width: 90%;">
+        <div class="card-body text-center">
+            <h5 class="card-title mb-4" style="color: #89ea55;">Selecione a Quantidade de Ingressos</h5>
+            
+            <div class="form-group mb-4">
+                <label for="qtdIngressos" class="form-label visually-hidden">Quantidade de ingressos</label>
+                <input type="number" id="qtdIngressos" class="form-control form-control-lg text-center" min="1" max="10" placeholder="Ex: 1"/>
+            </div>
+            
+            <button type="button" class="btn btn-success btn-lg w-100" onclick="saveQtdTickets()">Confirmar</button>
+        </div>
     </div>
-  </body>
+</body>
 
 </html>
+
 <script>
-  function saveQtdTickets() {
-    const inputTickets = document.getElementById("qtdIngressos").value;
-    if(inputTickets > 0){
-      localStorage.setItem("qtdIngressos", parseInt(inputTickets));
-      const userId = localStorage.getItem("userId")
-      window.location.href = `/tickets/summary?qtd=${inputTickets}&userId=${userId}`;
+    function saveQtdTickets() {
+        const inputTickets = document.getElementById("qtdIngressos").value;
+        if (inputTickets > 0 && inputTickets <= 10) { // Added max validation
+            localStorage.setItem("qtdIngressos", parseInt(inputTickets));
+            const userId = localStorage.getItem("userId");
+            window.location.href = `/tickets/summary?qtd=${inputTickets}&userId=${userId}`;
+        } else {
+            alert("Por favor, insira uma quantidade válida entre 1 e 10."); // User feedback
+            document.getElementById("qtdIngressos").value = ""; // Clear invalid input
+        }
     }
-  }
 </script>

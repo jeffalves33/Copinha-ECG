@@ -2,22 +2,24 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 
-<%- include('../partials/head', { title: 'IngressosNaJu' }) %>
+<%- include('../partials/head', { title: 'IngressosNaJu - Login' }) %>
 
-    <body>
-        <div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
-            <div class="card p-4" style="width: 300px;">
-                <h3 class="text-center">Login</h3>
+    <body class="d-flex justify-content-center align-items-center vh-100 bg-dark">
+        <div class="card p-4 shadow-lg" style="max-width: 400px; width: 90%;">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">Login</h3>
                 <form onsubmit="authenticate(event)">
-                    <div class="form-group">
-                        <label for="username">CPF</label>
-                        <input type="text" id="userCPF" class="form-control" placeholder="CPF" required>
+                    <div class="mb-3">
+                        <label for="userCPF" class="form-label">CPF</label>
+                        <input type="text" id="userCPF" class="form-control form-control-lg"
+                            placeholder="Digite seu CPF" required>
                     </div>
-                    <div class="form-group">
-                        <label for="password">Senha</label>
-                        <input type="password" id="password" class="form-control" placeholder="Senha" required>
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Senha</label>
+                        <input type="password" id="password" class="form-control form-control-lg"
+                            placeholder="Digite sua senha" required>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-block mt-2">Entrar</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">Entrar</button>
                 </form>
             </div>
         </div>
@@ -33,24 +35,51 @@
 
                 const userCPF = document.getElementById("userCPF").value;
                 const password = document.getElementById("password").value;
+                // Note: Your current logic compares input CPF directly with localStorage CPF.
+                // For a real application, you'd send BOTH CPF and password to the server
+                // for validation against a database.
                 const userCPFLocalStorage = localStorage.getItem("userCPF");
 
-                if (userCPF == userCPFLocalStorage) {
+                // Basic client-side check, though server-side is crucial for security
+                if (userCPF === userCPFLocalStorage || userCPFLocalStorage === null) { // Added condition for new users without local storage CPF
                     fetch(`search-password/${userCPF}/${password}`)
-                        .then(response => response.json())
+                        .then(response => {
+                            if (!response.ok) {
+                                // Handle HTTP errors (e.g., 401 Unauthorized, 404 Not Found)
+                                return response.json().then(err => { throw new Error(err.message || 'Erro de autenticação.'); });
+                            }
+                            return response.json();
+                        })
                         .then(data => {
-                            if(data.user != null){
-                                const ingresso = localStorage.getItem("ingresso");
+                            if (data.user != null) {
+                                // Store user details
                                 localStorage.setItem("userEmail", data.user.email);
                                 localStorage.setItem("userName", data.user.nome);
                                 localStorage.setItem("userPhone", data.user.phone);
                                 localStorage.setItem("userId", data.user.id);
-                                if(ingresso == "baixar") window.location.href = "/download-tickets-page";
-                                else window.location.href = "/select-tickets";
+                                localStorage.setItem("userCPF", userCPF); // Save the CPF entered
+
+                                // Redirect based on 'ingresso'
+                                const ingresso = localStorage.getItem("ingresso");
+                                if (ingresso === "baixar") { // Use strict equality
+                                    window.location.href = "/download-tickets-page";
+                                } else {
+                                    window.location.href = "/select-tickets";
+                                }
+                            } else {
+                                // If user is null (e.g., password mismatch)
+                                alert("CPF ou Senha inválidos!");
                             }
                         })
-                        .catch(error => console.error('Erro de autenticação:', error));
-                } else alert("CPF errado!");
+                        .catch(error => {
+                            console.error('Erro de autenticação:', error);
+                            alert(error.message || 'Ocorreu um erro ao tentar fazer login.');
+                        });
+                } else {
+                    alert("CPF inserido não corresponde ao CPF salvo localmente!");
+                    // Optionally clear the input if it doesn't match
+                    document.getElementById("userCPF").value = "";
+                }
             }
         </script>
     </body>

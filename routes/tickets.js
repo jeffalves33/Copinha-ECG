@@ -307,7 +307,7 @@ router.get('/success', async (req, res) => {
 });
 
 router.get('/failure', (req, res) => {
-    return res.send('Pagamento não concluído. Você pode tentar novamente.');
+    return res.render('tickets/failure');
 });
 
 router.get('/pending', (req, res) => {

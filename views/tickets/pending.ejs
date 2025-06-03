@@ -2,14 +2,17 @@
 <html lang="pt-br">
 <%- include('../partials/head', { title: 'Pagamento Pendente' }) %>
 
-    <body>
-        <div class="container py-5 text-center">
-            <h2>Pagamento em Análise</h2>
-            <p>Estamos aguardando a confirmação do seu pagamento.</p>
-            <div class="spinner-border text-primary my-4" role="status">
-                <span class="visually-hidden">Loading...</span>
+    <body class="d-flex justify-content-center align-items-center vh-100 bg-dark">
+        <div class="card p-4 shadow-lg text-center" style="max-width: 450px;">
+            <div class="card-body">
+                <div class="spinner-grow text-warning mb-4" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h2 class="card-title mb-3">Pagamento em Análise</h2>
+                <p class="card-text lead">Estamos aguardando a confirmação do seu pagamento.</p>
+                <p class="card-text text-muted mt-3">Por favor, não feche esta página.</p>
+                <p class="card-text mt-3">Verificando status...</p>
             </div>
-            <p>Verificando status...</p>
         </div>
 
         <script>
@@ -28,13 +31,17 @@
                     // Se quiser, pode tratar rejeitado ou cancelado aqui
                     else if (data.status === 'rejected' || data.status === 'cancelled') {
                         alert('Pagamento não foi aprovado. Por favor, tente novamente.');
-                        window.location.href = '/';
+                        window.location.href = '/'; // Redirect to home or a failed payment page
                     }
                 } catch (error) {
                     console.error('Erro ao verificar pagamento:', error);
+                    // Optionally display an error message on the page if the fetch fails repeatedly
+                    // For critical errors, you might want to redirect after some attempts or user action
                 }
             }
 
+            // Call immediately on page load, then every 3 seconds
+            checkPayment();
             setInterval(checkPayment, 3000);
         </script>
     </body>

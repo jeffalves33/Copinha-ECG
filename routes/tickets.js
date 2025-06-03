@@ -298,7 +298,7 @@ router.get('/success', async (req, res) => {
             return res.send('Pagamento não aprovado.');
         }
 
-        return res.render('tickets/thankyou');
+        return res.render('tickets/success');
 
     } catch (err) {
         console.error('❌ Erro na rota /success:', err.message || err);

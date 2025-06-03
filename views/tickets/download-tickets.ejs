@@ -1,19 +1,18 @@
-<!-- views/tickets/download-tickets.ejs -->
 <!DOCTYPE html>
 <html>
 
-<%- include('../partials/head', { title: 'IngressosNaJu' }) %>
+<%- include('../partials/head', { title: 'IngressosNaJu - Baixar Ingressos' }) %>
 
-    <body>
-        <div class="container d-flex flex-column justify-content-center align-items-center" style="height: 100%;">
-            <div data-mdb-input-init
-                class="form-outline w-100 d-flex flex-column justify-content-center align-items-center gap-3">
-                <label class="form-label p-0" for="qtdIngressos">
-                    <h6 style="color: #89ea55">Seus ingressos</h6>
-                </label>
-                <div id="assentos-container">
-                    <!-- Os assentos serão exibidos aqui -->
+    <body class="d-flex justify-content-center align-items-center vh-100 bg-dark">
+        <div class="card p-4 shadow-lg" style="max-width: 600px; width: 90%;">
+            <div class="card-body text-center">
+                <h5 class="card-title mb-4" style="color: #89ea55;">Seus Ingressos</h5>
+
+                <div id="assentos-container" class="list-group list-group-flush mb-4">
+                    <p class="text-muted">Carregando seus ingressos...</p>
                 </div>
+
+                <a href="/" class="btn btn-secondary btn-lg">Voltar ao Início</a>
             </div>
         </div>
     </body>
@@ -21,41 +20,62 @@
 </html>
 <script>
     let ticketsList = [];
-    let cont = 1;
     const userId = localStorage.getItem('userId');
 
     window.onload = function () {
-        fetch(`search-seats-general/${userId}`)
-            .then(response => response.json())
+        const assentosContainer = document.getElementById('assentos-container');
+        assentosContainer.innerHTML = `
+            <div class="d-flex justify-content-center my-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+            </div>
+            <p class="text-muted">Buscando seus ingressos...</p>
+        `; // Show loading spinner while fetching
+
+        fetch(`/search-seats-general/${userId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                const assentosContainer = document.getElementById('assentos-container');
-                assentosContainer.innerHTML = '';
+                assentosContainer.innerHTML = ''; // Clear loading message
+
                 if (data.tickets && data.tickets.length > 0) {
-                    data.tickets.forEach(ticket => {
-                        ticketsList.push(ticket);
-                        const assentoInfo = `
-                            <div class="row" id="${ticket.id}">
-                                <div class="col-10">
-                                    <p class="p-2 bg-light border rounded  onclick="downloadTicket('${ticket.id}')">
-                                        ${cont} - Quantidade: ${ticket.quantidade}
-                                    </p>
-                                </div>
-                                <div class="col-2">
-                                    <button class="btn btn-primary" onclick="downloadTicket('${ticket.id}')">📥</button>
-                                </div>
+                    data.tickets.forEach((ticket, index) => { // Use index for counter
+                        ticketsList.push(ticket); // Store for future use if needed
+
+                        const ticketItem = `
+                            <div class="list-group-item d-flex justify-content-between align-items-center mb-2 rounded shadow-sm">
+                                <span class="fw-bold fs-5 text-dark">${index + 1} - Quantidade: ${ticket.quantidade}</span>
+                                <button class="btn btn-primary btn-sm" onclick="downloadTicket('${ticket.id}')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V3.5a.5.5 0 0 0-1 0v6.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                    </svg>
+                                    <span class="ms-1 d-none d-sm-inline">Baixar</span>
+                                </button>
                             </div>
                         `;
-                        assentosContainer.innerHTML += assentoInfo;
-                        cont += 1;
+                        assentosContainer.innerHTML += ticketItem;
                     });
                 } else {
-                    assentosContainer.innerHTML = '<p class="text-warning">Nenhum assento encontrado.</p>';
+                    assentosContainer.innerHTML = '<div class="alert alert-warning" role="alert">Nenhum ingresso encontrado para este usuário.</div>';
                 }
             })
-            .catch(error => console.error('Erro ao buscar os assentos:', error));
+            .catch(error => {
+                console.error('Erro ao buscar os ingressos:', error);
+                assentosContainer.innerHTML = '<div class="alert alert-danger" role="alert">Ocorreu um erro ao carregar seus ingressos. Tente novamente.</div>';
+            });
     };
 
     function downloadTicket(ticketId) {
+        // Find the specific ticket to get its quantity
+        const ticket = ticketsList.find(t => t.id === ticketId);
+        const fileName = ticket ? `ingresso_${ticket.quantidade}_${ticketId}.png` : `ingresso_${ticketId}.png`;
+
         fetch(`/download-tickets/${ticketId}`)
             .then(response => {
                 if (!response.ok) {
@@ -69,7 +89,7 @@
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = `ticket_${ticketId}.png`;
+                a.download = fileName; // Use a more descriptive file name
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -77,7 +97,7 @@
             })
             .catch(error => {
                 console.error('[ERROR] Erro ao baixar o ticket:', error);
+                alert('Não foi possível baixar o ingresso. Tente novamente.'); // User feedback
             });
     }
-
 </script>

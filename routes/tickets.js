@@ -34,11 +34,18 @@ async function createEventTicket(user) {
         const fontPath = path.join(__dirname, '..', 'public', 'fonts', 'open-sans', 'open-sans-32-white', 'open-sans-32-white.fnt');
         const font = await Jimp.loadFont(fontPath);
 
-        const text1 = `${user.nome} | ${user.payment_id}`;
+        const imageWidth = 720;
+        const text1 = `${user.nome}`;
         const text2 = `Quantidade: ${user.quantidade}`;
+        const charWidthEstimate = 18;
+        const text1EstimatedWidth = text1.length * charWidthEstimate;
+        const text1X = (imageWidth - text1EstimatedWidth) / 2;
 
-        image.print(font, 15, 590, text1);
-        image.print(font, 10, 625, text2);
+        image.print(font, Math.max(0, text1X), 590, text1); // Garante que X não seja negativo
+
+        const text2EstimatedWidth = text2.length * charWidthEstimate;
+        const text2X = (imageWidth - text2EstimatedWidth) / 2;
+        image.print(font, Math.max(0, text2X), 625, text2);
 
         const qrCode = await generateQRCode(user);
         const qrImage = await Jimp.read(qrCode);

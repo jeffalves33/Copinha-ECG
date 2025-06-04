@@ -69,7 +69,7 @@ async function createEventTicket(user) {
 }
 
 // Função para enviar e-mail
-async function sendEmailWithTicket(to, buffer) {
+async function sendEmailWithTicket(to, buffer, quantidade) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -78,17 +78,22 @@ async function sendEmailWithTicket(to, buffer) {
         }
     });
 
+    const attachments = [];
+
+    // Loop 'quantidade' times to add the same attachment
+    for (let i = 0; i < quantidade; i++) {
+        attachments.push({
+            filename: `ticket_${i + 1}.png`, // Give each ticket a unique filename
+            content: buffer
+        });
+    }
+
     const mailOptions = {
         from: '"Copinha ECG" <espetaculoecg@gmail.com>',
         to: to,
         subject: 'Seu ingresso para o evento!',
-        text: 'Olá! Segue em anexo seus ingressos.',
-        attachments: [
-            {
-                filename: 'ticket.png',
-                content: buffer
-            }
-        ]
+        text: `Olá! Seguem em anexo seus ${quantidade} ingressos.`,
+        attachments: attachments
     };
 
     await transporter.sendMail(mailOptions);
@@ -180,7 +185,7 @@ router.post('/webhook/mercadopago', async (req, res) => {
 
                     const ticketBuffer = await createEventTicket(userJson);
 
-                    await sendEmailWithTicket(user[0].email, ticketBuffer);
+                    await sendEmailWithTicket(user[0].email, ticketBuffer, ticket.quantidade);
 
                     console.log('✅ E-mail com ticket enviado com sucesso!');
 

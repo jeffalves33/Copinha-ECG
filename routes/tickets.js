@@ -8,7 +8,6 @@ const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 
 const Jimp = require('jimp');
 const QRCode = require('qrcode');
-const { createCanvas } = require('canvas');
 const nodemailer = require('nodemailer');
 const { PDFDocument, rgb } = require('pdf-lib');
 

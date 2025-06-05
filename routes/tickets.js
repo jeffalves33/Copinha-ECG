@@ -213,7 +213,7 @@ router.get('/summary', async (req, res) => {
             return res.status(400).send('Usuário não identificado.');
         }
 
-        const unitPrice = 1;
+        const unitPrice = 26.5;
         const total = unitPrice * qty;
 
         const { data: user, error: errorUser } = await supabase

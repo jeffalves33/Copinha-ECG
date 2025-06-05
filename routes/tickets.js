@@ -97,7 +97,6 @@ async function sendEmailWithTicket(to, buffer, quantidade) {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log('📨 E-mail enviado para:', to);
 }
 
 router.post('/webhook/mercadopago', async (req, res) => {
@@ -187,8 +186,6 @@ router.post('/webhook/mercadopago', async (req, res) => {
 
                     await sendEmailWithTicket(user[0].email, ticketBuffer, ticket.quantidade);
 
-                    console.log('✅ E-mail com ticket enviado com sucesso!');
-
                 } catch (err) {
                     console.error('❌ Erro ao gerar ticket ou enviar e-mail:', err);
                 }
@@ -248,8 +245,6 @@ router.get('/summary', async (req, res) => {
             console.error('❌ Erro ao criar ticket:', errorTickets.message);
             return res.status(500).send('Erro ao criar ticket.');
         }
-
-        console.log("🎟️ Ticket criado:", ticket[0]);
 
         const external_reference = "pedido" + userId;
 
@@ -348,7 +343,7 @@ router.get('/checkpayment', async (req, res) => {
 
         const status = data.status;
 
-        console.log(`🔍 Verificando pagamento ${paymentId} - Status: ${status}`);
+        console.log(`🔍 Verificando pagamento ${paymentId} - ${status}`);
 
         return res.json({ status });
 

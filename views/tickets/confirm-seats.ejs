@@ -37,7 +37,7 @@
 
             <div class="card border-light shadow-lg mb-4">
                 <div class="card-body">
-                    <h4 class="card-title text-success mb-3">Baixar Ingressos por CPF</h4>
+                    <h4 class="card-title text-success mb-3">Enviar Ingressos manualmente</h4>
                     <div class="row g-3 align-items-end">
                         <div class="col-sm-8 col-md-9">
                             <label for="cpf-input-pagos" class="form-label visually-hidden">CPF do Usuário</label>
@@ -48,7 +48,7 @@
                         </div>
                         <div class="col-sm-4 col-md-3">
                             <button type="button" class="btn btn-primary btn-lg w-100"
-                                onclick="buscarIngressosPagos()">Buscar</button>
+                                onclick="enviarIngressosPagos()">Buscar</button>
                         </div>
                     </div>
                     <div id="assentos-container-pagos" class="list-group list-group-flush mt-3">
@@ -130,7 +130,7 @@
                 }
             }
 
-            async function buscarIngressosPagos() {
+            async function enviarIngressosPagos() {
                 const cpfInput = document.getElementById('cpf-input-pagos');
                 const formattedCpf = cpfInput.value;
                 const cleanCpf = formattedCpf.replace(/\D/g, '');
@@ -144,33 +144,17 @@
                 }
                 cpfInput.classList.remove('is-invalid');
 
-                assentosContainerPagos.innerHTML = `<div class="text-center my-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Buscando...</span></div> Buscando ingressos...</div>`;
+                assentosContainerPagos.innerHTML = `<div class="text-center my-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Buscando...</span></div> Enviando email...</div>`;
 
                 try {
-                    const response = await fetch(`search-seats-general/${formattedCpf}`);
+                    const response = await fetch(`send-email/${formattedCpf}`);
                     if (!response.ok) throw new Error('Erro ao buscar ingressos pagos.');
-                    const data = await response.json();
 
-                    if (data.tickets && data.tickets.length > 0) {
-                        data.tickets.forEach((ticket, index) => {
-                            const ticketItem = `
-                            <div class="list-group-item d-flex justify-content-between align-items-center bg-dark text-light border-secondary mb-2 rounded shadow-sm">
-                                <span class="fw-bold fs-5 text-success">${index + 1} - Quantidade: ${ticket.quantidade}</span>
-                                <div>
-                                    <button class="btn btn-info btn-sm me-2" onclick="downloadTicket('${ticket.id}')">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
-                                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
-                                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V3.5a.5.5 0 0 0-1 0v6.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
-                                        </svg>
-                                        <span class="ms-1 d-none d-sm-inline">Baixar</span>
-                                    </button>
-                                    </div>
-                            </div>
-                        `;
-                            assentosContainerPagos.innerHTML += ticketItem;
-                        });
-                    } else {
-                        assentosContainerPagos.innerHTML = '<div class="alert alert-warning mt-2" role="alert">Nenhum ingresso pago encontrado para este CPF.</div>';
+                    if (response.ok) {
+                        const data = await response.json();
+                        const email = data.email;
+
+                        assentosContainerPagos.innerHTML = `<div class="alert alert-info mt-2" role="alert">Email enviado com sucesso para ${email}</div>`; // Template literal correto
                     }
                 } catch (error) {
                     console.error('Erro ao buscar ingressos:', error);

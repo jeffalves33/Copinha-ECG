@@ -96,6 +96,7 @@ async function sendEmailWithTicket(to, buffer, quantidade) {
     };
 
     await transporter.sendMail(mailOptions);
+    console.log(`📩 Email enviado com sucesso para ${to}!`);
 }
 
 router.post('/webhook/mercadopago', async (req, res) => {
@@ -363,8 +364,8 @@ router.get('/dashboard', async (req, res) => {
     if (errorTickets) return res.status(500).json({ error: errorTickets.message });
 
     tickets.forEach((ticket) => {
-        if(ticket.serie == '9') ticketQtd9 += ticket.quantidade;
-        if(ticket.serie == '14') ticketQtd14 += ticket.quantidade;
+        if (ticket.serie == '9') ticketQtd9 += ticket.quantidade;
+        if (ticket.serie == '14') ticketQtd14 += ticket.quantidade;
     });
     ticketQtd = tickets.length;
 
@@ -414,16 +415,33 @@ router.get('/search-password/:cpf/:password', async (req, res) => {
     return res.status(200).json({ message: 'Senha incorreta', user: null });
 });
 
-router.get('/search-seats-general/:userId', async (req, res) => {
-    const { userId } = req.params;
-    const { data, error } = await supabase
-        .from('tickets')
-        .select()
-        .eq('status', 'approved')
-        .eq('user_id', userId);
-    if (error) return res.status(500).json({ error: error.message });
+router.get('/send-email/:cpf', async (req, res) => {
+    const { cpf } = req.params;
+    const { data: user, error: erroUser } = await supabase
+        .from('Users')
+        .select('id, email, nome')
+        .eq('cpf', cpf);
+    if (erroUser) return res.status(500).json({ error: erroUser.message });
 
-    res.json({ tickets: data });
+    const { data: tickets, error: erroTickets } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('user_id', user[0]?.id)
+        .eq('status', 'approved');
+    if (erroTickets) return res.status(500).json({ error: erroTickets.message });
+
+    await Promise.all(tickets.map(async (ticket) => {
+        const userJson = {
+            ...ticket.qrcode_data,
+            email: user[0].email,
+            nome: user[0].nome,
+        };
+
+        const ticketBuffer = await createEventTicket(userJson);
+        await sendEmailWithTicket(user[0].email, ticketBuffer, ticket.quantidade);
+    }));
+
+    return res.status(200).json({ message: 'Emails enviado com sucesso', email: user[0]?.email});
 });
 
 router.get('/download-tickets/:ticketId', async (req, res) => {

@@ -77,10 +77,10 @@
                     const response = await fetch(`dashboard/`);
                     if (!response.ok) throw new Error('Erro ao buscar dados do dashboard');
                     const data = await response.json();
-                    const [ticketQtd9, ticketQtd14] = [data.ticketQtd9, data.ticketQtd14];
+                    const [ticketQtd9, ticketQtd14, ticketQtd] = [data.ticketQtd9, data.ticketQtd14, data.ticketQtd];
                     const elementP = document.getElementById('account');
                     const [totalRevenueTicket9, totalRevenueTicket14] = [ticketQtd9 * 26.5, ticketQtd14 * 26.5];
-                    elementP.innerHTML = `9h: <span class="text-success fw-bold">${ticketQtd9}</span> (<span class="text-success fw-bold">R$${totalRevenueTicket9.toFixed(2).replace('.', ',')}</span>), 14h: <span class="text-success fw-bold">${ticketQtd14}</span> (<span class="text-success fw-bold">R$${totalRevenueTicket14.toFixed(2).replace('.', ',')}</span>) <br/> Total: <span class="text-success fw-bold">R$${(totalRevenueTicket9 + totalRevenueTicket14).toFixed(2).replace('.', ',')}</span>`;
+                    elementP.innerHTML = `9h: <span class="text-success fw-bold">${ticketQtd9}</span> (<span class="text-success fw-bold">R$${totalRevenueTicket9.toFixed(2).replace('.', ',')}</span>), 14h: <span class="text-success fw-bold">${ticketQtd14}</span> (<span class="text-success fw-bold">R$${totalRevenueTicket14.toFixed(2).replace('.', ',')}</span>) <br/> Compras: <span class="text-warning fw-bold">${ticketQtd}</span> | Total: <span class="text-success fw-bold">R$${(totalRevenueTicket9 + totalRevenueTicket14).toFixed(2).replace('.', ',')}</span>`;
                 } catch (error) {
                     console.error('Erro ao buscar dados do dashboard:', error);
                     document.getElementById('account').innerHTML = '<span class="text-danger">Erro ao carregar dados.</span>';
@@ -122,7 +122,7 @@
                         </div>
                     `;
                     } else {
-                        senhaContainer.innerHTML = '<div class="alert alert-warning mt-2" role="alert">Nenhuma senha encontrada para este CPF.</div>';
+                        senhaContainer.innerHTML = '<div class="alert alert-warning mt-2" role="alert">CPF não encontrado.</div>';
                     }
                 } catch (error) {
                     console.error('Erro ao buscar a senha:', error);
@@ -135,7 +135,7 @@
                 const formattedCpf = cpfInput.value;
                 const cleanCpf = formattedCpf.replace(/\D/g, '');
                 const assentosContainerPagos = document.getElementById('assentos-container-pagos');
-                assentosContainerPagos.innerHTML = ''; // Clear previous content
+                assentosContainerPagos.innerHTML = '';
 
                 if (cleanCpf.length !== 11) {
                     assentosContainerPagos.innerHTML = '<div class="alert alert-danger mt-2">Por favor, insira um CPF válido com 11 dígitos.</div>';
@@ -147,7 +147,7 @@
                 assentosContainerPagos.innerHTML = `<div class="text-center my-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Buscando...</span></div> Buscando ingressos...</div>`;
 
                 try {
-                    const response = await fetch(`search-seats-general/${cleanCpf}`);
+                    const response = await fetch(`search-seats-general/${formattedCpf}`);
                     if (!response.ok) throw new Error('Erro ao buscar ingressos pagos.');
                     const data = await response.json();
 

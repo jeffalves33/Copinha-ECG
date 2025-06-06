@@ -355,19 +355,20 @@ router.get('/checkpayment', async (req, res) => {
 });
 
 router.get('/dashboard', async (req, res) => {
-    let [ticketQtd9, ticketQtd14] = [0, 0];
+    let [ticketQtd9, ticketQtd14, ticketQtd] = [0, 0, 0];
     const { data: tickets, error: errorTickets } = await supabase
         .from('tickets')
-        .select('quantidade', 'serie')
+        .select('quantidade, serie')
         .eq('status', 'approved');
     if (errorTickets) return res.status(500).json({ error: errorTickets.message });
 
     tickets.forEach((ticket) => {
-        if(ticket.serie === '9') ticketQtd9 += ticket.quantidade;
-        if(ticket.serie === '14') ticketQtd14 += ticket.quantidade;
+        if(ticket.serie == '9') ticketQtd9 += ticket.quantidade;
+        if(ticket.serie == '14') ticketQtd14 += ticket.quantidade;
     });
+    ticketQtd = tickets.length;
 
-    res.json({ ticketQtd9: ticketQtd9, ticketQtd14: ticketQtd14 });
+    res.json({ ticketQtd9: ticketQtd9, ticketQtd14: ticketQtd14, ticketQtd: ticketQtd });
 });
 
 router.get('/select-tickets', (req, res) => {
@@ -397,7 +398,7 @@ router.get('/search-password/:cpf', async (req, res) => {
         .select('senha')
         .eq('cpf', cpf);
     if (error) return res.status(500).json({ error: error.message });
-    res.json({ senha: data[0].senha });
+    res.json({ senha: data[0]?.senha });
 });
 
 router.get('/search-password/:cpf/:password', async (req, res) => {

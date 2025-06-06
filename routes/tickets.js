@@ -441,7 +441,19 @@ router.get('/send-email/:cpf', async (req, res) => {
         await sendEmailWithTicket(user[0].email, ticketBuffer, ticket.quantidade);
     }));
 
-    return res.status(200).json({ message: 'Emails enviado com sucesso', email: user[0]?.email});
+    return res.status(200).json({ message: 'Emails enviado com sucesso', email: user[0]?.email });
+});
+
+router.get('/search-seats-general/:userId', async (req, res) => {
+    const { userId } = req.params;
+    const { data, error } = await supabase
+        .from('tickets')
+        .select()
+        .eq('status', 'approved')
+        .eq('user_id', userId);
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({ tickets: data });
 });
 
 router.get('/download-tickets/:ticketId', async (req, res) => {

@@ -1,67 +1,91 @@
-<!-- views/tickets/confirm-seats.ejs -->
 <!DOCTYPE html>
 <html lang="pt-br">
 
-<%- include('../partials/head', { title: 'IngressosNaJu' }) %>
+<%- include('../partials/head', { title: 'IngressosNaJu - Admin Dashboard' }) %>
 
-    <body>
-        <div class="container align-items-top justify-content-center" style="height: 100vh;">
-            <div class="row justify-content-center mt-2">
-                <p id="account" class="text-center" style="color: white"></p>
+    <body class="bg-dark text-light pb-5">
+        <div class="container py-4">
+            <h2 class="text-center text-light mb-4">Painel Administrativo</h2>
+
+            <div class="card border-light shadow-lg mb-4">
+                <div class="card-body text-center">
+                    <h4 class="card-title text-success mb-3">Visão Geral</h4>
+                    <p id="account" class="lead mb-0">Carregando dados...</p>
+                </div>
             </div>
 
-            <div class="row mt-3">
-                <p class="m-1" style="color: #89ea55;">Senha do usuário</p>
-            </div>
-            <div class="row">
-                <div class="col-6">
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="senha-input" placeholder="Digite um CPF"
-                            oninput="inputformatCPF(this)" required>
+            <div class="card border-light shadow-lg mb-4">
+                <div class="card-body">
+                    <h4 class="card-title text-success mb-3">Buscar Senha do Usuário</h4>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-sm-8 col-md-9">
+                            <label for="senha-input" class="form-label visually-hidden">CPF do Usuário</label>
+                            <input type="text"
+                                class="form-control form-control-lg bg-secondary text-light border-secondary"
+                                id="senha-input" placeholder="Digite o CPF do usuário" oninput="inputformatCPF(this)"
+                                required>
+                        </div>
+                        <div class="col-sm-4 col-md-3">
+                            <button type="button" class="btn btn-primary btn-lg w-100"
+                                onclick="buscarUsuarioSenha()">Buscar</button>
+                        </div>
+                    </div>
+                    <div id="senha-container" class="mt-3">
                     </div>
                 </div>
-                <div class="col-4">
-                    <button type="submit" class="btn btn-secondary" onclick="buscarUsuarioSenha()">Buscar</button>
-                </div>
-            </div>
-            <div id="senha-container" class="mb-3">
-                <!-- Os assentos serão exibidos aqui -->
             </div>
 
-            <div class="row mt-3">
-                <p class="m-1" style="color: #89ea55;">Baixar Ingressos (CPF)</p>
-            </div>
-            <div class="row">
-                <div class="col-6">
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="cpf-input-pagos" placeholder="Digite um CPF"
-                            oninput="inputformatCPF(this)" required>
+            <div class="card border-light shadow-lg mb-4">
+                <div class="card-body">
+                    <h4 class="card-title text-success mb-3">Baixar Ingressos por CPF</h4>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-sm-8 col-md-9">
+                            <label for="cpf-input-pagos" class="form-label visually-hidden">CPF do Usuário</label>
+                            <input type="text"
+                                class="form-control form-control-lg bg-secondary text-light border-secondary"
+                                id="cpf-input-pagos" placeholder="Digite o CPF do usuário"
+                                oninput="inputformatCPF(this)" required>
+                        </div>
+                        <div class="col-sm-4 col-md-3">
+                            <button type="button" class="btn btn-primary btn-lg w-100"
+                                onclick="buscarIngressosPagos()">Buscar</button>
+                        </div>
+                    </div>
+                    <div id="assentos-container-pagos" class="list-group list-group-flush mt-3">
                     </div>
                 </div>
-                <div class="col-4">
-                    <button type="submit" class="btn btn-secondary" onclick="">Buscar</button>
-                </div>
             </div>
-            <div id="assentos-container-pagos">
-                <!-- Os assentos serão exibidos aqui -->
+
+            <div class="text-center mt-5">
+                <button class="btn btn-danger btn-lg" onclick="logoutAdmin()">Sair do Painel</button>
             </div>
 
         </div>
+
         <script>
             window.onload = function () {
-                const minhaVariavel = localStorage.getItem('admin');
-                if (!minhaVariavel) window.location.href = '/admin';
+                const isAdmin = localStorage.getItem('admin');
+                if (!isAdmin) {
+                    window.location.href = '/admin';
+                    return;
+                }
+                fetchDashboardData();
+            };
 
-                fetch(`dashboard/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const [paymentSuccess, paymentPedding] = [data.paymentSuccess, data.paymentPedding];
-                        const elementP = document.getElementById('account');
-                        elementP.innerHTML = `vendidos: ${paymentSuccess} (R$${paymentSuccess * 25},00), pendentes: ${paymentPedding}`;
-                    })
-                    .catch(error => console.error('Erro ao buscar', error));
+            async function fetchDashboardData() {
+                try {
+                    const response = await fetch(`dashboard/`);
+                    if (!response.ok) throw new Error('Erro ao buscar dados do dashboard');
+                    const data = await response.json();
+                    const [ticketQtd9, ticketQtd14] = [data.ticketQtd9, data.ticketQtd14];
+                    const elementP = document.getElementById('account');
+                    const [totalRevenueTicket9, totalRevenueTicket14] = [ticketQtd9 * 26.5, ticketQtd14 * 26.5];
+                    elementP.innerHTML = `9h: <span class="text-success fw-bold">${ticketQtd9}</span> (<span class="text-success fw-bold">R$${totalRevenueTicket9.toFixed(2).replace('.', ',')}</span>), 14h: <span class="text-success fw-bold">${ticketQtd14}</span> (<span class="text-success fw-bold">R$${totalRevenueTicket14.toFixed(2).replace('.', ',')}</span>) <br/> Total: <span class="text-success fw-bold">R$${(totalRevenueTicket9 + totalRevenueTicket14).toFixed(2).replace('.', ',')}</span>`;
+                } catch (error) {
+                    console.error('Erro ao buscar dados do dashboard:', error);
+                    document.getElementById('account').innerHTML = '<span class="text-danger">Erro ao carregar dados.</span>';
+                }
             }
-
             function inputformatCPF(input) {
                 let value = input.value.replace(/\D/g, '');
                 if (value.length > 3) value = value.slice(0, 3) + '.' + value.slice(3);
@@ -70,38 +94,118 @@
                 input.value = value;
             }
 
-            function negarPagamento(idCadeira) {
-                fetch(`deny-payment/${idCadeira}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const elementRemove = document.getElementById(data.id);
-                        elementRemove.remove();
-                    })
-                    .catch(error => console.error('Erro ao negar pagamento:', error));
+            async function buscarUsuarioSenha() {
+                const cpfInput = document.getElementById('senha-input');
+                const formattedCpf = cpfInput.value;
+                const cleanCpf = formattedCpf.replace(/\D/g, '');
+                const senhaContainer = document.getElementById('senha-container');
+                senhaContainer.innerHTML = ''; // Clear previous content
+
+                if (cleanCpf.length !== 11) {
+                    senhaContainer.innerHTML = '<div class="alert alert-danger mt-2">Por favor, insira um CPF válido com 11 dígitos.</div>';
+                    cpfInput.classList.add('is-invalid');
+                    return;
+                }
+                cpfInput.classList.remove('is-invalid');
+
+                senhaContainer.innerHTML = `<div class="text-center my-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Buscando...</span></div> Buscando senha...</div>`;
+
+                try {
+                    const response = await fetch(`search-password/${formattedCpf}`);
+                    if (!response.ok) throw new Error('Erro ao buscar senha do usuário.');
+                    const data = await response.json();
+
+                    if (data.senha) {
+                        senhaContainer.innerHTML = `
+                        <div class="alert alert-info mt-2" role="alert">
+                            Senha para <strong>${formattedCpf}</strong>: <strong class="text-primary">${data.senha}</strong>
+                        </div>
+                    `;
+                    } else {
+                        senhaContainer.innerHTML = '<div class="alert alert-warning mt-2" role="alert">Nenhuma senha encontrada para este CPF.</div>';
+                    }
+                } catch (error) {
+                    console.error('Erro ao buscar a senha:', error);
+                    senhaContainer.innerHTML = '<div class="alert alert-danger mt-2" role="alert">Ocorreu um erro ao buscar a senha.</div>';
+                }
             }
 
-            function buscarUsuarioSenha() {
-                const cpfInput = document.getElementById('senha-input').value;
-                if (cpfInput.length === 14) {
-                    fetch(`search-password/${cpfInput}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const assentosContainer = document.getElementById('senha-container');
-                            assentosContainer.innerHTML = '';
+            async function buscarIngressosPagos() {
+                const cpfInput = document.getElementById('cpf-input-pagos');
+                const formattedCpf = cpfInput.value;
+                const cleanCpf = formattedCpf.replace(/\D/g, '');
+                const assentosContainerPagos = document.getElementById('assentos-container-pagos');
+                assentosContainerPagos.innerHTML = ''; // Clear previous content
 
-                            if (data.senha) {
-                                const assentoInfo = `
-                                    <div class="col-12">
-                                        <p class="p-1 bg-light rounded">${data.senha}</p>
-                                    </div>
-                                `;
-                                assentosContainer.innerHTML += assentoInfo;
-                            } else {
-                                assentosContainer.innerHTML = '<p class="text-warning">Nenhuma senha encontrada.</p>';
-                            }
-                        })
-                        .catch(error => console.error('Erro ao buscar os assentos:', error));
+                if (cleanCpf.length !== 11) {
+                    assentosContainerPagos.innerHTML = '<div class="alert alert-danger mt-2">Por favor, insira um CPF válido com 11 dígitos.</div>';
+                    cpfInput.classList.add('is-invalid');
+                    return;
                 }
+                cpfInput.classList.remove('is-invalid');
+
+                assentosContainerPagos.innerHTML = `<div class="text-center my-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Buscando...</span></div> Buscando ingressos...</div>`;
+
+                try {
+                    const response = await fetch(`search-seats-general/${cleanCpf}`);
+                    if (!response.ok) throw new Error('Erro ao buscar ingressos pagos.');
+                    const data = await response.json();
+
+                    if (data.tickets && data.tickets.length > 0) {
+                        data.tickets.forEach((ticket, index) => {
+                            const ticketItem = `
+                            <div class="list-group-item d-flex justify-content-between align-items-center bg-dark text-light border-secondary mb-2 rounded shadow-sm">
+                                <span class="fw-bold fs-5 text-success">${index + 1} - Quantidade: ${ticket.quantidade}</span>
+                                <div>
+                                    <button class="btn btn-info btn-sm me-2" onclick="downloadTicket('${ticket.id}')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V3.5a.5.5 0 0 0-1 0v6.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                        </svg>
+                                        <span class="ms-1 d-none d-sm-inline">Baixar</span>
+                                    </button>
+                                    </div>
+                            </div>
+                        `;
+                            assentosContainerPagos.innerHTML += ticketItem;
+                        });
+                    } else {
+                        assentosContainerPagos.innerHTML = '<div class="alert alert-warning mt-2" role="alert">Nenhum ingresso pago encontrado para este CPF.</div>';
+                    }
+                } catch (error) {
+                    console.error('Erro ao buscar ingressos:', error);
+                    assentosContainerPagos.innerHTML = '<div class="alert alert-danger mt-2" role="alert">Ocorreu um erro ao buscar os ingressos.</div>';
+                }
+            }
+
+            async function downloadTicket(ticketId) {
+                try {
+                    const fileName = `ingresso_${ticketId}.png`;
+
+                    const response = await fetch(`/download-tickets/${ticketId}`);
+                    if (!response.ok) {
+                        throw new Error(`Erro ao baixar o ticket. Status: ${response.status}`);
+                    }
+                    const blob = await response.blob();
+
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    console.log('[INFO] Ticket baixado com sucesso.');
+                } catch (error) {
+                    console.error('[ERROR] Erro ao baixar o ticket:', error);
+                    alert('Não foi possível baixar o ingresso. Tente novamente.');
+                }
+            }
+
+            function logoutAdmin() {
+                localStorage.removeItem("admin");
+                window.location.href = '/admin';
             }
 
         </script>

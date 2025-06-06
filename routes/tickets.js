@@ -355,22 +355,19 @@ router.get('/checkpayment', async (req, res) => {
 });
 
 router.get('/dashboard', async (req, res) => {
-    let paymentSuccess, paymentPedding;
-    const { data: dataSuccess, error: errorSuccess, count: countSuccess } = await supabase
+    let [ticketQtd9, ticketQtd14] = [0, 0];
+    const { data: tickets, error: errorTickets } = await supabase
         .from('tickets')
-        .select('status', { count: 'exact' })
+        .select('quantidade', 'serie')
         .eq('status', 'approved');
-    if (errorSuccess) return res.status(500).json({ error: errorSuccess.message });
-    paymentSuccess = countSuccess;
+    if (errorTickets) return res.status(500).json({ error: errorTickets.message });
 
-    const { data: dataPedding, error: errorPedding, count: countPedding } = await supabase
-        .from('tickets')
-        .select('status', { count: 'exact' })
-        .eq('status', 'pending');
-    if (errorPedding) return res.status(500).json({ error: errorPedding.message });
-    paymentPedding = countPedding;
+    tickets.forEach((ticket) => {
+        if(ticket.serie === '9') ticketQtd9 += ticket.quantidade;
+        if(ticket.serie === '14') ticketQtd14 += ticket.quantidade;
+    });
 
-    res.json({ paymentSuccess: paymentSuccess, paymentPedding: paymentPedding });
+    res.json({ ticketQtd9: ticketQtd9, ticketQtd14: ticketQtd14 });
 });
 
 router.get('/select-tickets', (req, res) => {

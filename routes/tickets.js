@@ -99,13 +99,18 @@ async function sendEmailWithTicket(to, buffer, quantidade) {
 
 router.post('/webhook/mercadopago', async (req, res) => {
     /**Erro de pagamentos:
-     * Aparentemente esse erro de pagamento retorna um pagamento como sucesso,
+     * (1) OPÇÃO: Aparentemente esse erro de pagamento retorna um pagamento como sucesso,
      * mas o fluxo de atualização no banco de dados não acontece, fazendo com que
      * o pagamento fique inexistente e não gerando o ingresso nem enviando para o email
      * já que no banco o status do pagamento continua pending. Talvez o problema esteja
      * realmente nessa etapa do código que responde um 200 OK antes de fazer todo processo.
      * No próximo evento, corrigir e testar isso com o send no final de todo o processo, pois
      * se existir um erro, ele não retorne um 200 OK efetuando o pagamento.
+     * (2) OPÇÃO: Caso não resolva, testar a mudança de servidor. Pois usando o Vercel,
+     * sabemos que ele é um servidor para front-end (estático) e não para um servidor Express
+     * por exemplo, talvez isso faça com que serveless sejam rodados para que uma execução
+     * contínua seja mantida e isso pode gerar erros. É interessante usar um servidor próprio
+     * como Render ou outros.
      */
     res.sendStatus(200);
 

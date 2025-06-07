@@ -26,7 +26,6 @@ async function generateQRCode(data) {
     }
 }
 
-// Função para criar o ticket com QRCode
 async function createEventTicket(user) {
     try {
         const image = await Jimp.read(path.join(__dirname, '..', 'public', 'images', 'ticket.png'));
@@ -67,7 +66,6 @@ async function createEventTicket(user) {
     }
 }
 
-// Função para enviar e-mail
 async function sendEmailWithTicket(to, buffer, quantidade) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -100,6 +98,15 @@ async function sendEmailWithTicket(to, buffer, quantidade) {
 }
 
 router.post('/webhook/mercadopago', async (req, res) => {
+    /**Erro de pagamentos:
+     * Aparentemente esse erro de pagamento retorna um pagamento como sucesso,
+     * mas o fluxo de atualização no banco de dados não acontece, fazendo com que
+     * o pagamento fique inexistente e não gerando o ingresso nem enviando para o email
+     * já que no banco o status do pagamento continua pending. Talvez o problema esteja
+     * realmente nessa etapa do código que responde um 200 OK antes de fazer todo processo.
+     * No próximo evento, corrigir e testar isso com o send no final de todo o processo, pois
+     * se existir um erro, ele não retorne um 200 OK efetuando o pagamento.
+     */
     res.sendStatus(200);
 
     const paymentId = req.body.data?.id;

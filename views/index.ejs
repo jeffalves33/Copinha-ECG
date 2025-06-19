@@ -7,8 +7,8 @@
       <img src="/images/logo_original.png" class="img-fluid mb-5" alt="IngressosNaJu Logo" style="max-width: 250px;">
 
       <div class="d-grid gap-3 col-10 col-sm-8 col-md-6 col-lg-4 mx-auto">
-        <button type="button" class="btn btn-success btn-lg shadow-sm" data-bs-toggle="modal"
-          data-bs-target="#loginComprarModal">Comprar Ingressos</button>
+        <!--<button type="button" class="btn btn-success btn-lg shadow-sm" data-bs-toggle="modal"
+          data-bs-target="#loginComprarModal">Comprar Ingressos</button>-->
         <button type="button" class="btn btn-info btn-lg shadow-sm" data-bs-toggle="modal"
           data-bs-target="#loginBaixarModal">Baixar Ingressos</button>
         <button type="button" class="btn btn-secondary btn-lg shadow-sm"
@@ -94,9 +94,9 @@
         // Reset modal states when they are hidden
         const loginComprarModal = document.getElementById('loginComprarModal');
         loginComprarModal.addEventListener('hidden.bs.modal', function () {
-          /*document.getElementById('cpf-input-comprar-modal').value = '';
+          document.getElementById('cpf-input-comprar-modal').value = '';
           document.getElementById('cpf-input-comprar-modal').classList.remove('is-invalid');
-          document.getElementById('modal-messages-comprar').innerHTML = '';*/
+          document.getElementById('modal-messages-comprar').innerHTML = '';
           alert("Ingressos esgotados");
         });
 

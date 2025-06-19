@@ -442,6 +442,8 @@ router.get('/send-email/:cpf', async (req, res) => {
         .eq('status', 'approved');
     if (erroTickets) return res.status(500).json({ error: erroTickets.message });
 
+    if(tickets.length < 1) return res.status(500).json({ message: 'Erro ao buscar cadeira' });
+
     await Promise.all(tickets.map(async (ticket) => {
         const userJson = {
             ...ticket.qrcode_data,

@@ -94,9 +94,10 @@
         // Reset modal states when they are hidden
         const loginComprarModal = document.getElementById('loginComprarModal');
         loginComprarModal.addEventListener('hidden.bs.modal', function () {
-          document.getElementById('cpf-input-comprar-modal').value = '';
+          /*document.getElementById('cpf-input-comprar-modal').value = '';
           document.getElementById('cpf-input-comprar-modal').classList.remove('is-invalid');
-          document.getElementById('modal-messages-comprar').innerHTML = '';
+          document.getElementById('modal-messages-comprar').innerHTML = '';*/
+          alert("Ingressos esgotados");
         });
 
         const loginBaixarModal = document.getElementById('loginBaixarModal');

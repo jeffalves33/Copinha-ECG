@@ -371,13 +371,14 @@ router.get('/dashboard', async (req, res) => {
     let [ticketQtd9, ticketQtd14, ticketQtd] = [0, 0, 0];
     const { data: tickets, error: errorTickets } = await supabase
         .from('tickets')
-        .select('quantidade, serie')
+        .select('quantidade, serie, qrcode_data')
         .eq('status', 'approved');
     if (errorTickets) return res.status(500).json({ error: errorTickets.message });
 
     tickets.forEach((ticket) => {
-        if (ticket.serie == '9') ticketQtd9 += ticket.quantidade;
-        if (ticket.serie == '14') ticketQtd14 += ticket.quantidade;
+        const quantidade = ticket.qrcode_data?.quantidade || 0;
+        if (ticket.serie == 9) ticketQtd9 += quantidade;
+        if (ticket.serie == 14) ticketQtd14 += quantidade;
     });
     ticketQtd = tickets.length;
 

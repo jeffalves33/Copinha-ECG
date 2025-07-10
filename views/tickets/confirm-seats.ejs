@@ -77,15 +77,16 @@
                     const response = await fetch(`dashboard/`);
                     if (!response.ok) throw new Error('Erro ao buscar dados do dashboard');
                     const data = await response.json();
-                    const [ticketQtd9, ticketQtd14, ticketQtd] = [data.ticketQtd9, data.ticketQtd14, data.ticketQtd];
+                    const [ticketQtd18, ticketQtd] = [data.ticketQtd18, data.ticketQtd];
                     const elementP = document.getElementById('account');
-                    const [totalRevenueTicket9, totalRevenueTicket14] = [ticketQtd9 * 26.5, ticketQtd14 * 26.5];
-                    elementP.innerHTML = `9h: <span class="text-success fw-bold">${ticketQtd9}</span> (<span class="text-success fw-bold">R$${totalRevenueTicket9.toFixed(2).replace('.', ',')}</span>), 14h: <span class="text-success fw-bold">${ticketQtd14}</span> (<span class="text-success fw-bold">R$${totalRevenueTicket14.toFixed(2).replace('.', ',')}</span>) <br/> Compras: <span class="text-warning fw-bold">${ticketQtd}</span> | Total: <span class="text-success fw-bold">R$${(totalRevenueTicket9 + totalRevenueTicket14).toFixed(2).replace('.', ',')}</span>`;
+                    const totalRevenueTicket18 = ticketQtd18 * 30;
+                    elementP.innerHTML = `Compras: <span class="text-warning fw-bold">${ticketQtd}</span> | Total: <span class="text-success fw-bold">R$${(totalRevenueTicket18).toFixed(2).replace('.', ',')}</span>`;
                 } catch (error) {
                     console.error('Erro ao buscar dados do dashboard:', error);
                     document.getElementById('account').innerHTML = '<span class="text-danger">Erro ao carregar dados.</span>';
                 }
             }
+
             function inputformatCPF(input) {
                 let value = input.value.replace(/\D/g, '');
                 if (value.length > 3) value = value.slice(0, 3) + '.' + value.slice(3);

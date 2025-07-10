@@ -29,26 +29,26 @@ async function generateQRCode(data) {
 async function createEventTicket(user) {
     try {
         const image = await Jimp.read(path.join(__dirname, '..', 'public', 'images', 'ticket.png'));
-        const fontPath = path.join(__dirname, '..', 'public', 'fonts', 'open-sans', 'open-sans-32-white', 'open-sans-32-white.fnt');
+        const fontPath = path.join(__dirname, '..', 'public', 'fonts', 'open-sans', 'open-sans-64-white', 'open-sans-64-white.fnt');
         const font = await Jimp.loadFont(fontPath);
 
-        const imageWidth = 720;
+        const imageWidth = 1080;
         const text1 = `${user.nome}`;
         const text2 = `Quantidade: ${user.quantidade}`;
-        const charWidthEstimate = 18;
+        const charWidthEstimate = 32;
         const text1EstimatedWidth = text1.length * charWidthEstimate;
         const text1X = (imageWidth - text1EstimatedWidth) / 2;
 
-        image.print(font, Math.max(0, text1X), 590, text1); // Garante que X não seja negativo
+        image.print(font, Math.max(0, text1X), 1820, text1); // Garante que X não seja negativo
 
         const text2EstimatedWidth = text2.length * charWidthEstimate;
         const text2X = (imageWidth - text2EstimatedWidth) / 2;
-        image.print(font, Math.max(0, text2X), 625, text2);
+        image.print(font, Math.max(0, text2X), 1350, text2);
 
         const qrCode = await generateQRCode(user);
         const qrImage = await Jimp.read(qrCode);
-        qrImage.resize(300, 300);
-        image.composite(qrImage, 210, 700);
+        qrImage.resize(500, 500);
+        image.composite(qrImage, 510, 650); 
 
         return new Promise((resolve, reject) => {
             image.getBuffer(Jimp.MIME_PNG, (err, buffer) => {
@@ -226,7 +226,7 @@ router.get('/summary', async (req, res) => {
             return res.status(400).send('Usuário não identificado.');
         }
 
-        const unitPrice = 26.5;
+        const unitPrice = 30;
         const total = unitPrice * qty;
 
         const { data: user, error: errorUser } = await supabase
@@ -368,21 +368,20 @@ router.get('/checkpayment', async (req, res) => {
 });
 
 router.get('/dashboard', async (req, res) => {
-    let [ticketQtd9, ticketQtd14, ticketQtd] = [0, 0, 0];
+    let [ticketQtd18, ticketQtd] = [0, 0, 0];
     const { data: tickets, error: errorTickets } = await supabase
         .from('tickets')
-        .select('quantidade, serie, qrcode_data')
+        .select('quantidade, qrcode_data')
         .eq('status', 'approved');
     if (errorTickets) return res.status(500).json({ error: errorTickets.message });
 
     tickets.forEach((ticket) => {
         const quantidade = ticket.qrcode_data?.quantidade || 0;
-        if (ticket.serie == 9) ticketQtd9 += quantidade;
-        if (ticket.serie == 14) ticketQtd14 += quantidade;
+        ticketQtd18 += quantidade;
     });
     ticketQtd = tickets.length;
 
-    res.json({ ticketQtd9: ticketQtd9, ticketQtd14: ticketQtd14, ticketQtd: ticketQtd });
+    res.json({ ticketQtd18: ticketQtd18, ticketQtd: ticketQtd });
 });
 
 router.get('/select-tickets', (req, res) => {

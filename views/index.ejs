@@ -7,8 +7,10 @@
       <img src="/images/logo_original.png" class="img-fluid mb-5" alt="IngressosNaJu Logo" style="max-width: 250px;">
 
       <div class="d-grid gap-3 col-10 col-sm-8 col-md-6 col-lg-4 mx-auto">
-        <button type="button" class="btn btn-success btn-lg shadow-sm" data-bs-toggle="modal"
-          data-bs-target="#loginComprarModal">Comprar Ingressos</button>
+        <div id="botao-comprar-container">
+          <button type="button" class="btn btn-success btn-lg shadow-sm" data-bs-toggle="modal"
+            data-bs-target="#loginComprarModal">Comprar Ingressos</button>
+        </div>
         <button type="button" class="btn btn-info btn-lg shadow-sm" data-bs-toggle="modal"
           data-bs-target="#loginBaixarModal">Baixar Ingressos</button>
         <button type="button" class="btn btn-secondary btn-lg shadow-sm"
@@ -90,6 +92,26 @@
       document.addEventListener("DOMContentLoaded", function () {
         // Clear localStorage on page load (ensure fresh start for user flow)
         localStorage.clear();
+
+        async function verificaLimiteIngressos(limit) {
+          const container = document.getElementById('botao-comprar-container');
+          try {
+            const response = await fetch(`dashboard/`);
+            if (!response.ok) throw new Error('Erro ao buscar dados de ingressos');
+            const data = await response.json();
+            const ticketQtd = data.ticketQtd;
+            if (ticketQtd >= limit) {
+              container.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                  Ingresoss esgotados!
+                </div>
+              `;
+            }
+          } catch (error) {
+            console.error('Erro ao buscar limite de ingressos:', error);
+          }
+        }
+        verificaLimiteIngressos(300);
 
         // Reset modal states when they are hidden
         const loginComprarModal = document.getElementById('loginComprarModal');

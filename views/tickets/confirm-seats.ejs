@@ -80,7 +80,7 @@
                     const [ticketQtd18, ticketQtd] = [data.ticketQtd18, data.ticketQtd];
                     const elementP = document.getElementById('account');
                     const totalRevenueTicket18 = ticketQtd18 * 30;
-                    elementP.innerHTML = `Compras: <span class="text-warning fw-bold">${ticketQtd}</span> | Total: <span class="text-success fw-bold">R$${(totalRevenueTicket18).toFixed(2).replace('.', ',')}</span>`;
+                    elementP.innerHTML = `Compras: <span class="text-warning fw-bold">${ticketQtd}</span> | Ingressos: <span class="text-warning fw-bold">${ticketQtd18}</span> | Total: <span class="text-success fw-bold">R$${(totalRevenueTicket18).toFixed(2).replace('.', ',')}</span>`;
                 } catch (error) {
                     console.error('Erro ao buscar dados do dashboard:', error);
                     document.getElementById('account').innerHTML = '<span class="text-danger">Erro ao carregar dados.</span>';

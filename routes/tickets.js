@@ -213,7 +213,6 @@ router.post('/webhook/mercadopago', async (req, res) => {
 router.get('/summary', async (req, res) => {
     try {
         const qty = parseInt(req.query.qtd, 10);
-        const serie = req.query.serie;
         const userId = req.query.userId;
 
         if (!qty || qty <= 0) {
@@ -247,7 +246,6 @@ router.get('/summary', async (req, res) => {
                 buyer_email: user.email || null,
                 status: 'pending',
                 quantidade: qty,
-                serie: serie,
                 qrcode_data: null,
                 created_at: new Date(),
                 updated_at: new Date(),

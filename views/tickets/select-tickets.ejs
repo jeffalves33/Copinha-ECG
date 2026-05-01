@@ -6,16 +6,7 @@
 <body class="d-flex justify-content-center align-items-center vh-100 bg-dark">
     <div class="card p-4 shadow-lg border-light" style="max-width: 450px; width: 90%;">
         <div class="card-body text-center">
-            <h5 class="card-title mb-4" style="color: #89ea55;">Selecione seus Ingressos e horário</h5>
-
-            <div class="mb-4 text-start">
-                <div class="form-check form-check-inline mb-2">
-                    <input class="form-check-input" type="radio" name="serieOption" id="serieIntermediario" value="18" checked>
-                    <label class="form-check-label" for="serieIntermediario">
-                        10:30 - Horário único<br><small class="text-muted">(Série Livre)</small>
-                    </label>
-                </div>
-            </div>
+            <h5 class="card-title mb-4" style="color: #89ea55;">Selecione a quantidade de ingressos</h5>
 
             <div class="form-group mb-4">
                 <label for="qtdIngressos" class="form-label d-block visually-hidden">Quantidade de ingressos</label>
@@ -36,12 +27,6 @@
     function saveQtdTickets() {
         const inputTickets = document.getElementById("qtdIngressos");
         const quantity = parseInt(inputTickets.value);
-        const selectedSerie = document.querySelector('input[name="serieOption"]:checked');
-
-        if (!selectedSerie) {
-            alert("Por favor, selecione a série.");
-            return;
-        }
 
         if (isNaN(quantity) || quantity < 1) {
             inputTickets.classList.add('is-invalid');
@@ -51,9 +36,8 @@
         }
 
         localStorage.setItem("qtdIngressos", quantity);
-        localStorage.setItem("serieSelecionada", selectedSerie.value);
 
         const userId = localStorage.getItem("userId");
-        window.location.href = `/tickets/summary?qtd=${quantity}&userId=${userId}&serie=${selectedSerie.value}`;
+        window.location.href = `/tickets/summary?qtd=${quantity}&userId=${userId}`;
     }
 </script>

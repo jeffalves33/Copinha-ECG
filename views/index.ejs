@@ -93,26 +93,6 @@
         // Clear localStorage on page load (ensure fresh start for user flow)
         localStorage.clear();
 
-        async function verificaLimiteIngressos(limit) {
-          const container = document.getElementById('botao-comprar-container');
-          try {
-            const response = await fetch(`dashboard/`);
-            if (!response.ok) throw new Error('Erro ao buscar dados de ingressos');
-            const data = await response.json();
-            const ticketQtd = data.ticketQtd;
-            if (ticketQtd >= limit) {
-              container.innerHTML = `
-                <div class="alert alert-danger" role="alert">
-                  Ingresoss esgotados!
-                </div>
-              `;
-            }
-          } catch (error) {
-            console.error('Erro ao buscar limite de ingressos:', error);
-          }
-        }
-        verificaLimiteIngressos(100);
-
         // Reset modal states when they are hidden
         const loginComprarModal = document.getElementById('loginComprarModal');
         loginComprarModal.addEventListener('hidden.bs.modal', function () {

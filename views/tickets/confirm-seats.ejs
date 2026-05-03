@@ -16,27 +16,6 @@
 
             <div class="card border-light shadow-lg mb-4">
                 <div class="card-body">
-                    <h4 class="card-title text-success mb-3">Buscar Senha do Usuário</h4>
-                    <div class="row g-3 align-items-end">
-                        <div class="col-sm-8 col-md-9">
-                            <label for="senha-input" class="form-label visually-hidden">CPF do Usuário</label>
-                            <input type="text"
-                                class="form-control form-control-lg bg-secondary text-light border-secondary"
-                                id="senha-input" placeholder="Digite o CPF do usuário" oninput="inputformatCPF(this)"
-                                required>
-                        </div>
-                        <div class="col-sm-4 col-md-3">
-                            <button type="button" class="btn btn-primary btn-lg w-100"
-                                onclick="buscarUsuarioSenha()">Buscar</button>
-                        </div>
-                    </div>
-                    <div id="senha-container" class="mt-3">
-                    </div>
-                </div>
-            </div>
-
-            <div class="card border-light shadow-lg mb-4">
-                <div class="card-body">
                     <h4 class="card-title text-success mb-3">Enviar Ingressos manualmente</h4>
                     <div class="row g-3 align-items-end">
                         <div class="col-sm-8 col-md-9">
@@ -93,42 +72,6 @@
                 if (value.length > 7) value = value.slice(0, 7) + '.' + value.slice(7);
                 if (value.length > 11) value = value.slice(0, 11) + '-' + value.slice(11, 13);
                 input.value = value;
-            }
-
-            async function buscarUsuarioSenha() {
-                const cpfInput = document.getElementById('senha-input');
-                const formattedCpf = cpfInput.value;
-                const cleanCpf = formattedCpf.replace(/\D/g, '');
-                const senhaContainer = document.getElementById('senha-container');
-                senhaContainer.innerHTML = ''; // Clear previous content
-
-                if (cleanCpf.length !== 11) {
-                    senhaContainer.innerHTML = '<div class="alert alert-danger mt-2">Por favor, insira um CPF válido com 11 dígitos.</div>';
-                    cpfInput.classList.add('is-invalid');
-                    return;
-                }
-                cpfInput.classList.remove('is-invalid');
-
-                senhaContainer.innerHTML = `<div class="text-center my-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Buscando...</span></div> Buscando senha...</div>`;
-
-                try {
-                    const response = await fetch(`search-password/${formattedCpf}`);
-                    if (!response.ok) throw new Error('Erro ao buscar senha do usuário.');
-                    const data = await response.json();
-
-                    if (data.senha) {
-                        senhaContainer.innerHTML = `
-                        <div class="alert alert-info mt-2" role="alert">
-                            Senha para <strong>${formattedCpf}</strong>: <strong class="text-primary">${data.senha}</strong>
-                        </div>
-                    `;
-                    } else {
-                        senhaContainer.innerHTML = '<div class="alert alert-warning mt-2" role="alert">CPF não encontrado.</div>';
-                    }
-                } catch (error) {
-                    console.error('Erro ao buscar a senha:', error);
-                    senhaContainer.innerHTML = '<div class="alert alert-danger mt-2" role="alert">Ocorreu um erro ao buscar a senha.</div>';
-                }
             }
 
             async function enviarIngressosPagos() {

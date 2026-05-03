@@ -12,12 +12,12 @@
                     <div class="mb-3">
                         <label for="userCPF" class="form-label">CPF</label>
                         <input type="text" id="userCPF" class="form-control form-control-lg"
-                            placeholder="Digite seu CPF" required>
+                            placeholder="Digite seu CPF" oninput="inputformatCPF(this)" required>
                     </div>
                     <div class="mb-4">
-                        <label for="password" class="form-label">Senha</label>
-                        <input type="password" id="password" class="form-control form-control-lg"
-                            placeholder="Digite sua senha" required>
+                        <label for="userPhone" class="form-label">Telefone</label>
+                        <input type="text" id="userPhone" class="form-control form-control-lg"
+                            placeholder="Digite seu telefone" oninput="inputformatPhoneNumber(this)" required>
                     </div>
                     <button type="submit" class="btn btn-primary btn-lg w-100">Entrar</button>
                 </form>
@@ -34,41 +34,39 @@
                 event.preventDefault();
 
                 const userCPF = document.getElementById("userCPF").value;
-                const password = document.getElementById("password").value;
-                // Note: Your current logic compares input CPF directly with localStorage CPF.
-                // For a real application, you'd send BOTH CPF and password to the server
-                // for validation against a database.
+                const userPhone = document.getElementById("userPhone").value;
                 const userCPFLocalStorage = localStorage.getItem("userCPF");
 
-                // Basic client-side check, though server-side is crucial for security
-                if (userCPF === userCPFLocalStorage || userCPFLocalStorage === null) { // Added condition for new users without local storage CPF
-                    fetch(`search-password/${userCPF}/${password}`)
+                if (userCPF === userCPFLocalStorage || userCPFLocalStorage === null) {
+                    fetch(`/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ cpf: userCPF, phone: userPhone })
+                    })
                         .then(response => {
                             if (!response.ok) {
-                                // Handle HTTP errors (e.g., 401 Unauthorized, 404 Not Found)
                                 return response.json().then(err => { throw new Error(err.message || 'Erro de autenticação.'); });
                             }
                             return response.json();
                         })
                         .then(data => {
                             if (data.user != null) {
-                                // Store user details
                                 localStorage.setItem("userEmail", data.user.email);
                                 localStorage.setItem("userName", data.user.nome);
                                 localStorage.setItem("userPhone", data.user.phone);
                                 localStorage.setItem("userId", data.user.id);
-                                localStorage.setItem("userCPF", userCPF); // Save the CPF entered
+                                localStorage.setItem("userCPF", userCPF);
 
-                                // Redirect based on 'ingresso'
                                 const ingresso = localStorage.getItem("ingresso");
-                                if (ingresso === "baixar") { // Use strict equality
+                                if (ingresso === "baixar") {
                                     window.location.href = "/download-tickets-page";
                                 } else {
                                     window.location.href = "/select-tickets";
                                 }
                             } else {
-                                // If user is null (e.g., password mismatch)
-                                alert("CPF ou Senha inválidos!");
+                                alert("CPF ou telefone inválidos!");
                             }
                         })
                         .catch(error => {
@@ -77,9 +75,24 @@
                         });
                 } else {
                     alert("CPF inserido não corresponde ao CPF salvo localmente!");
-                    // Optionally clear the input if it doesn't match
                     document.getElementById("userCPF").value = "";
                 }
+            }
+
+            function inputformatPhoneNumber(input) {
+                let value = input.value.replace(/\D/g, '');
+                if (value.length > 0) value = '(' + value;
+                if (value.length > 3) value = value.slice(0, 3) + ') ' + value.slice(3);
+                if (value.length > 10) value = value.slice(0, 10) + '-' + value.slice(10, 15);
+                input.value = value;
+            }
+
+            function inputformatCPF(input) {
+                let value = input.value.replace(/\D/g, '');
+                if (value.length > 3) value = value.slice(0, 3) + '.' + value.slice(3);
+                if (value.length > 7) value = value.slice(0, 7) + '.' + value.slice(7);
+                if (value.length > 11) value = value.slice(0, 11) + '-' + value.slice(11, 13);
+                input.value = value;
             }
         </script>
     </body>

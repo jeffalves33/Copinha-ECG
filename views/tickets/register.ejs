@@ -26,11 +26,7 @@
                     <div class="form-group">
                         <label for="username">telefone</label>
                         <input type="text" id="userPhone" class="form-control" placeholder="Phone"
-                            oninput="inputformatPhoneNumber(this)">
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Senha</label>
-                        <input type="password" id="password" class="form-control" placeholder="Senha" required>
+                            oninput="inputformatPhoneNumber(this)" required>
                     </div>
                     <button type="submit" class="btn btn-primary btn-block mt-2">Entrar</button>
                 </form>
@@ -49,9 +45,8 @@
                 const userCPF = document.getElementById("userCPF").value;
                 const userEmail = document.getElementById("userEmail").value;
                 const userPhone = document.getElementById("userPhone").value;
-                const password = document.getElementById("password").value;
 
-                if (!userName || !userCPF || !userEmail || !userPhone || !password) {
+                if (!userName || !userCPF || !userEmail || !userPhone) {
                     alert("Por favor, preencha todos os campos.");
                     return;
                 }
@@ -73,16 +68,16 @@
                     return;
                 }
 
-                authenticate(event, userName, userCPF, userEmail, userPhone, password);
+                authenticate(event, userName, userCPF, userEmail, userPhone);
             }
 
-            function authenticate(event, userName, userCPF, userEmail, userPhoneDecod, password) {
+            function authenticate(event, userName, userCPF, userEmail, userPhoneDecod) {
                 fetch('/authenticate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ userName, userCPF, userEmail, userPhoneDecod, password })
+                    body: JSON.stringify({ userName, userCPF, userEmail, userPhoneDecod })
                 })
                     .then(response => response.json())
                     .then(data => {

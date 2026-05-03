@@ -407,27 +407,43 @@ router.get('/confirm-seats', async (req, res) => {
     res.render('tickets/confirm-seats');
 });
 
-router.get('/search-password/:cpf', async (req, res) => {
+router.post('/login', async (req, res) => {
+    const { cpf, phone } = req.body;
+    if (!cpf || !phone) {
+        return res.status(400).json({ message: 'CPF e telefone são obrigatórios', user: null });
+    }
+
+    const { data, error } = await supabase
+        .from('Users')
+        .select('id, nome, email, phone, cpf')
+        .eq('cpf', cpf);
+
+    if (error) return res.status(500).json({ message: 'Erro na busca', user: null });
+
+    if (data.length === 1) {
+        const cleanPhone = (phone || '').replace(/\D/g, '');
+        const cleanPhoneFromDb = (data[0].phone || '').replace(/\D/g, '');
+
+        if (cleanPhone && cleanPhoneFromDb && cleanPhone === cleanPhoneFromDb) {
+            return res.status(200).json({ message: 'Login realizado com sucesso', user: data[0] });
+        }
+    }
+
+    return res.status(200).json({ message: 'CPF ou telefone incorretos', user: null });
+});
+
+router.get('/search-user-cpf/:cpf', async (req, res) => {
     const { cpf } = req.params;
     const { data, error } = await supabase
         .from('Users')
-        .select('senha')
+        .select('id, nome, email, phone, cpf')
         .eq('cpf', cpf);
-    if (error) return res.status(500).json({ error: error.message });
-    res.json({ senha: data[0]?.senha });
-});
 
-router.get('/search-password/:cpf/:password', async (req, res) => {
-    const { cpf, password } = req.params;
-    const { data, error } = await supabase
-        .from('Users')
-        .select()
-        .eq('cpf', cpf);
-    if (error) return res.status(500).json({ message: 'Erro na busca', error });
+    if (error) return res.status(500).json({ message: 'Erro na busca', user: null });
     if (data.length == 1) {
-        if (data[0].senha == password) return res.status(200).json({ message: 'Senha correta', user: data[0] });
+        return res.status(200).json({ message: 'Usuário encontrado', user: data });
     }
-    return res.status(200).json({ message: 'Senha incorreta', user: null });
+    return res.status(200).json({ message: 'Usuário não encontrado', user: null });
 });
 
 router.get('/send-email/:cpf', async (req, res) => {
@@ -529,17 +545,6 @@ router.get('/download-tickets/:ticketId', async (req, res) => {
     }
 });
 
-router.get('/search-user-cpf/:cpf', async (req, res) => {
-    const { cpf } = req.params;
-    const { data, error } = await supabase
-        .from('Users')
-        .select()
-        .eq('cpf', cpf);
-    if (error) return res.status(500).json({ message: 'Erro na busca', user: null });
-    if (data.length == 1) return res.status(200).json({ message: 'Usuário encontrado', user: data });
-    return res.status(200).json({ message: 'Usuário não encontrado', user: null });
-});
-
 router.get('/login', async (req, res) => {
     res.render('tickets/login');
 });
@@ -549,11 +554,11 @@ router.get('/register', async (req, res) => {
 });
 
 router.post('/authenticate', async (req, res) => {
-    const { userName, userCPF, userEmail, userPhoneDecod, password } = req.body;
+    const { userName, userCPF, userEmail, userPhoneDecod } = req.body;
     const { data, error } = await supabase
         .from('Users')
-        .insert({ nome: userName, cpf: userCPF, email: userEmail, phone: userPhoneDecod, senha: password })
-        .select()
+        .insert({ nome: userName, cpf: userCPF, email: userEmail, phone: userPhoneDecod })
+        .select('id, nome, email, phone, cpf')
     if (error) return res.status(500).json({ message: 'Erro ao criar usuário', success: false });
     return res.status(200).json({ message: 'Usuário criado', success: true, user: data[0] });
 });

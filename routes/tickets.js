@@ -68,9 +68,7 @@ async function createEventTicket(user) {
 
 async function sendEmailWithTicket(to, buffer, quantidade) {
     const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
+        service: 'gmail',
         auth: {
             user: 'najuevents@gmail.com',
             pass: 'wqcyyocqlnkbwmqi'

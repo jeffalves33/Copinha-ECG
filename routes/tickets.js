@@ -26,29 +26,69 @@ async function generateQRCode(data) {
     }
 }
 
+function measureBitmapTextWidth(font, text) {
+    const chars = font?.chars || {};
+    let width = 0;
+
+    for (const char of text) {
+        const code = char.charCodeAt(0);
+        const glyph = chars[code] || chars[String(code)];
+        width += glyph?.xadvance || 16;
+    }
+
+    return width;
+}
+
+function fitTextWithEllipsis(font, text, maxWidth) {
+    if (measureBitmapTextWidth(font, text) <= maxWidth) return text;
+
+    let trimmed = text;
+    while (trimmed.length > 0 && measureBitmapTextWidth(font, `${trimmed}...`) > maxWidth) {
+        trimmed = trimmed.slice(0, -1);
+    }
+    return trimmed.length > 0 ? `${trimmed}...` : '...';
+}
+
 async function createEventTicket(user) {
     try {
         const image = await Jimp.read(path.join(__dirname, '..', 'public', 'images', 'ticket.png'));
-        const fontPath = path.join(__dirname, '..', 'public', 'fonts', 'open-sans', 'open-sans-64-white', 'open-sans-64-white.fnt');
+        const fontPath = path.join(__dirname, '..', 'public', 'fonts', 'open-sans', 'open-sans-32-white', 'open-sans-32-white.fnt');
         const font = await Jimp.loadFont(fontPath);
 
-        const imageWidth = 1080;
-        const text1 = `${user.nome}`;
-        const text2 = `Quantidade: ${user.quantidade}`;
-        const charWidthEstimate = 32;
-        const text1EstimatedWidth = text1.length * charWidthEstimate;
-        const text1X = (imageWidth - text1EstimatedWidth) / 2;
+        const imageWidth = image.bitmap.width;
+        const imageHeight = image.bitmap.height;
+        const text1 = `${user.nome || ''}`.trim();
+        const text2 = `${user.quantidade || ''}`.trim();
 
-        image.print(font, Math.max(0, text1X), 1820, text1); // Garante que X não seja negativo
+        const quantityBox = {
+            x: Math.floor(imageWidth * 0.515),
+            y: Math.floor(imageHeight * 0.699),
+            width: Math.floor(imageWidth * 0.28),
+            height: Math.floor(imageHeight * 0.045)
+        };
+        const nameBox = {
+            x: Math.floor(imageWidth * 0.17),
+            y: Math.floor(imageHeight * 0.758),
+            width: Math.floor(imageWidth * 0.66),
+            height: Math.floor(imageHeight * 0.055)
+        };
 
-        const text2EstimatedWidth = text2.length * charWidthEstimate;
-        const text2X = (imageWidth - text2EstimatedWidth) / 2;
-        image.print(font, Math.max(0, text2X), 1350, text2);
+        const fittedName = fitTextWithEllipsis(font, text1, nameBox.width - 16);
+        const fittedNameWidth = measureBitmapTextWidth(font, fittedName);
+        const quantityWidth = measureBitmapTextWidth(font, text2);
+        const nameX = nameBox.x + Math.max(0, Math.floor((nameBox.width - fittedNameWidth) / 2));
+        const quantityX = quantityBox.x + Math.max(0, Math.floor((quantityBox.width - quantityWidth) / 2));
+
+        image.print(font, nameX, nameBox.y, fittedName);
+        image.print(font, quantityX, quantityBox.y, text2);
 
         const qrCode = await generateQRCode(user);
         const qrImage = await Jimp.read(qrCode);
-        qrImage.resize(500, 500);
-        image.composite(qrImage, 510, 650);
+        const qrSize = Math.floor(imageWidth * 0.45);
+        const qrX = Math.floor(imageWidth * 0.325);
+        const qrY = Math.floor(imageHeight * 0.415);
+        qrImage.resize(qrSize, qrSize);
+        image.composite(qrImage, qrX, qrY);
 
         return new Promise((resolve, reject) => {
             image.getBuffer(Jimp.MIME_PNG, (err, buffer) => {
@@ -570,6 +610,31 @@ router.get('/test-email', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send(err.message);
+    }
+});
+
+router.get('/preview-ticket', async (req, res) => {
+    try {
+        const nome = req.query.nome || 'Jeferson Luiz Alves';
+        const quantidade = Number.parseInt(req.query.quantidade, 10) || 10;
+
+        const ticketData = {
+            ticket_id: 'preview-ticket',
+            payment_id: 'preview-payment',
+            quantidade,
+            buyer_email: 'preview@local',
+            email: 'preview@local',
+            nome
+        };
+
+        const ticketBuffer = await createEventTicket(ticketData);
+
+        res.set('Content-Type', 'image/png');
+        res.set('Content-Disposition', 'inline; filename=preview-ticket.png');
+        return res.send(ticketBuffer);
+    } catch (err) {
+        console.error('[ERROR] Erro ao gerar preview do ingresso:', err);
+        return res.status(500).json({ message: 'Erro ao gerar preview do ingresso.' });
     }
 });
 

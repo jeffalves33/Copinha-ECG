@@ -70,8 +70,8 @@ async function sendEmailWithTicket(to, buffer, quantidade) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: 'espetaculoecg@gmail.com',
-            pass: 'vykstszlqkynelxw'
+            user: 'najuevents@gmail.com',
+            pass: 'udwvwcgetzhsguds'
         }
     });
 
@@ -86,7 +86,7 @@ async function sendEmailWithTicket(to, buffer, quantidade) {
     }
 
     const mailOptions = {
-        from: '"Copinha ECG" <espetaculoecg@gmail.com>',
+        from: '"Copinha ECG" <najuevents@gmail.com>',
         to: to,
         subject: 'Seu ingresso para o evento!',
         text: `Olá! Seguem em anexo seus ${quantidade} ingressos.`,
@@ -280,9 +280,9 @@ router.get('/summary', async (req, res) => {
                     installments: 2
                 },
                 back_urls: {
-                    success: 'https://copinha-ecg.onrender.com/success',
-                    failure: 'https://copinha-ecg.onrender.com/failure',
-                    pending: 'https://copinha-ecg.onrender.com/pending'
+                    success: 'https://www.ingressosnaju.com.br/success',
+                    failure: 'https://www.ingressosnaju.com.br/failure',
+                    pending: 'https://www.ingressosnaju.com.br/pending'
                 },
                 auto_return: 'approved',
                 metadata: {

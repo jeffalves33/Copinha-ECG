@@ -68,10 +68,15 @@ async function createEventTicket(user) {
 
 async function sendEmailWithTicket(to, buffer, quantidade) {
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        connectionTimeout: 30000,
+        greetingTimeout: 30000,
+        socketTimeout: 30000,
         auth: {
-            user: 'najuevents@gmail.com',
-            pass: 'wqcyyocqlnkbwmqi'
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
         }
     });
 
@@ -551,6 +556,16 @@ router.post('/authenticate', async (req, res) => {
         .select()
     if (error) return res.status(500).json({ message: 'Erro ao criar usuário', success: false });
     return res.status(200).json({ message: 'Usuário criado', success: true, user: data[0] });
+});
+
+router.get('/test-email', async (req, res) => {
+    try {
+        await sendEmailWithTicket('jeffalvess6142@gmail.com', Buffer.from('teste'), 1);
+        res.send('Email enviado');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send(err.message);
+    }
 });
 
 module.exports = router;

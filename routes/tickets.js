@@ -48,7 +48,7 @@ async function createEventTicket(user) {
         const qrCode = await generateQRCode(user);
         const qrImage = await Jimp.read(qrCode);
         qrImage.resize(500, 500);
-        image.composite(qrImage, 510, 650); 
+        image.composite(qrImage, 510, 650);
 
         return new Promise((resolve, reject) => {
             image.getBuffer(Jimp.MIME_PNG, (err, buffer) => {
@@ -68,7 +68,9 @@ async function createEventTicket(user) {
 
 async function sendEmailWithTicket(to, buffer, quantidade) {
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
         auth: {
             user: 'najuevents@gmail.com',
             pass: 'wqcyyocqlnkbwmqi'

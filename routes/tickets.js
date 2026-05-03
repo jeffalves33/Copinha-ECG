@@ -71,7 +71,7 @@ async function sendEmailWithTicket(to, buffer, quantidade) {
         service: 'gmail',
         auth: {
             user: 'najuevents@gmail.com',
-            pass: 'udwvwcgetzhsguds'
+            pass: 'wqcyyocqlnkbwmqi'
         }
     });
 

@@ -10,7 +10,7 @@
             <div class="card border-light shadow-lg mb-4">
                 <div class="card-body text-center">
                     <h4 class="card-title text-success mb-3">Visão Geral</h4>
-                    <p id="account" class="lead mb-0">Carregando dados...</p>
+                    <div id="dashboard-overview" class="text-start">Carregando dados...</div>
                 </div>
             </div>
 
@@ -53,16 +53,59 @@
 
             async function fetchDashboardData() {
                 try {
-                    const response = await fetch(`dashboard/`);
+                    const response = await fetch(`/dashboard`);
                     if (!response.ok) throw new Error('Erro ao buscar dados do dashboard');
                     const data = await response.json();
-                    const [ticketQtd18, ticketQtd] = [data.ticketQtd18, data.ticketQtd];
-                    const elementP = document.getElementById('account');
-                    const totalRevenueTicket18 = ticketQtd18 * 30;
-                    elementP.innerHTML = `Compras: <span class="text-warning fw-bold">${ticketQtd}</span> | Ingressos: <span class="text-warning fw-bold">${ticketQtd18}</span> | Total: <span class="text-success fw-bold">R$${(totalRevenueTicket18).toFixed(2).replace('.', ',')}</span>`;
+                    const elementOverview = document.getElementById('dashboard-overview');
+
+                    const moneyFormat = new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    });
+
+                    const pixFeePercent = (data.fees?.pix || 0) * 100;
+                    const cardFeePercent = (data.fees?.card || 0) * 100;
+
+                    elementOverview.innerHTML = `
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="p-3 rounded bg-dark text-light border border-secondary h-100">
+                                    <div class="small text-uppercase text-light">Compras aprovadas</div>
+                                    <div class="h4 mb-0 text-warning fw-bold">${data.totalPurchases}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 rounded bg-dark text-light border border-secondary h-100">
+                                    <div class="small text-uppercase text-light">Ingressos vendidos</div>
+                                    <div class="h4 mb-0 text-warning fw-bold">${data.totalTickets}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 rounded bg-dark text-light border border-secondary h-100">
+                                    <div class="small text-uppercase text-light">Valor bruto</div>
+                                    <div class="h4 mb-0 text-success fw-bold">${moneyFormat.format(data.grossRevenue || 0)}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 rounded bg-dark text-light border border-secondary h-100">
+                                    <div class="small text-uppercase text-light">Valor líquido (após taxas)</div>
+                                    <div class="h4 mb-2 text-success fw-bold">${moneyFormat.format(data.netRevenue || 0)}</div>
+                                    <div class="small text-light">Descontos totais: ${moneyFormat.format(data.totalDiscounts || 0)}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 rounded bg-dark text-light border border-secondary h-100">
+                                    <div class="small text-uppercase text-light mb-2">Detalhes por forma de pagamento</div>
+                                    <div class="small mb-1">Pix (${pixFeePercent.toFixed(2).replace('.', ',')}%): <strong>${data.pixPurchases}</strong> compras / <strong>${data.pixTickets}</strong> ingressos</div>
+                                    <div class="small mb-1">Cartão (${cardFeePercent.toFixed(2).replace('.', ',')}%): <strong>${data.cardPurchases}</strong> compras / <strong>${data.cardTickets}</strong> ingressos</div>
+                                    <div class="small">Outros/não identificados: <strong>${data.otherPurchases}</strong> compras / <strong>${data.otherTickets}</strong> ingressos</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 } catch (error) {
                     console.error('Erro ao buscar dados do dashboard:', error);
-                    document.getElementById('account').innerHTML = '<span class="text-danger">Erro ao carregar dados.</span>';
+                    document.getElementById('dashboard-overview').innerHTML = '<span class="text-danger">Erro ao carregar dados.</span>';
                 }
             }
 

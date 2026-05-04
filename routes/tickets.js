@@ -16,6 +16,9 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 // Configura Mercado Pago
 const mercadopago = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN });
 const payment = new Payment(mercadopago);
+const UNIT_TICKET_PRICE = 30;
+const PIX_FEE_RATE = 0.0099;
+const CREDIT_CARD_FEE_RATE = 0.0498;
 
 async function generateQRCode(data) {
     try {
@@ -411,20 +414,102 @@ router.get('/checkpayment', async (req, res) => {
 });
 
 router.get('/dashboard', async (req, res) => {
-    let [ticketQtd18, ticketQtd] = [0, 0, 0];
-    const { data: tickets, error: errorTickets } = await supabase
-        .from('tickets')
-        .select('quantidade, qrcode_data')
-        .eq('status', 'approved');
-    if (errorTickets) return res.status(500).json({ error: errorTickets.message });
+    try {
+        const { data: tickets, error: errorTickets } = await supabase
+            .from('tickets')
+            .select('id, quantidade, qrcode_data, payment_id')
+            .eq('status', 'approved');
 
-    tickets.forEach((ticket) => {
-        const quantidade = ticket.qrcode_data?.quantidade || 0;
-        ticketQtd18 += quantidade;
-    });
-    ticketQtd = tickets.length;
+        if (errorTickets) {
+            return res.status(500).json({ error: errorTickets.message });
+        }
 
-    res.json({ ticketQtd18: ticketQtd18, ticketQtd: ticketQtd });
+        const summary = {
+            totalPurchases: tickets.length,
+            totalTickets: 0,
+            grossRevenue: 0,
+            netRevenue: 0,
+            totalDiscounts: 0,
+            pixPurchases: 0,
+            cardPurchases: 0,
+            otherPurchases: 0,
+            pixTickets: 0,
+            cardTickets: 0,
+            otherTickets: 0,
+            pixGrossRevenue: 0,
+            cardGrossRevenue: 0,
+            otherGrossRevenue: 0
+        };
+
+        const normalizedTickets = await Promise.all(tickets.map(async (ticket) => {
+            const quantidade = Number(ticket.quantidade || ticket.qrcode_data?.quantidade || 0);
+            let method = 'other';
+            let amount = quantidade * UNIT_TICKET_PRICE;
+
+            if (ticket.payment_id) {
+                try {
+                    const paymentData = await payment.get({ id: ticket.payment_id });
+                    const paymentTypeId = (paymentData?.payment_type_id || '').toLowerCase();
+                    const paymentMethodId = (paymentData?.payment_method_id || '').toLowerCase();
+                    const transactionAmount = Number(paymentData?.transaction_amount);
+
+                    if (Number.isFinite(transactionAmount) && transactionAmount > 0) {
+                        amount = transactionAmount;
+                    }
+
+                    if (paymentMethodId === 'pix' || paymentTypeId === 'bank_transfer') {
+                        method = 'pix';
+                    } else if (paymentTypeId === 'credit_card') {
+                        method = 'card';
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ Não foi possível consultar o pagamento ${ticket.payment_id}:`, error.message || error);
+                }
+            }
+
+            return { quantidade, method, amount };
+        }));
+
+        normalizedTickets.forEach(({ quantidade, method, amount }) => {
+            summary.totalTickets += quantidade;
+            summary.grossRevenue += amount;
+
+            if (method === 'pix') {
+                summary.pixPurchases += 1;
+                summary.pixTickets += quantidade;
+                summary.pixGrossRevenue += amount;
+                return;
+            }
+
+            if (method === 'card') {
+                summary.cardPurchases += 1;
+                summary.cardTickets += quantidade;
+                summary.cardGrossRevenue += amount;
+                return;
+            }
+
+            summary.otherPurchases += 1;
+            summary.otherTickets += quantidade;
+            summary.otherGrossRevenue += amount;
+        });
+
+        const pixNet = summary.pixGrossRevenue * (1 - PIX_FEE_RATE);
+        const cardNet = summary.cardGrossRevenue * (1 - CREDIT_CARD_FEE_RATE);
+        const otherNet = summary.otherGrossRevenue;
+        summary.netRevenue = pixNet + cardNet + otherNet;
+        summary.totalDiscounts = summary.grossRevenue - summary.netRevenue;
+
+        res.json({
+            ...summary,
+            fees: {
+                pix: PIX_FEE_RATE,
+                card: CREDIT_CARD_FEE_RATE
+            }
+        });
+    } catch (error) {
+        console.error('❌ Erro ao montar dashboard:', error.message || error);
+        res.status(500).json({ error: 'Erro ao montar dashboard' });
+    }
 });
 
 router.get('/select-tickets', (req, res) => {
